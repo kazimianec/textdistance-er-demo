@@ -1,398 +1,250 @@
-import { useState } from 'react'
+import { useState } from "react";
 import {
   Box,
+  Container,
   Typography,
   TextField,
   Button,
   Paper,
-  Grid,
-  Chip,
-  Divider,
   Alert,
-  LinearProgress,
-} from '@mui/material'
-import { CompareArrows, Warning, CheckCircle, Cancel } from '@mui/icons-material'
-import { useQuery } from '@tanstack/react-query'
-import { compare } from '../api/client'
-import { algorithmDescriptions } from '../data/showcases'
+  Divider,
+  Chip,
+  Card,
+  CardContent,
+  Grid,
+} from "@mui/material";
+import { AlgorithmGrid } from "../components/ScoreBar";
+import { useCompare } from "../hooks/useCompare";
 
-export default function ConsolidatedComparison() {
-  const [text1, setText1] = useState('')
-  const [text2, setText2] = useState('')
-  const [submitted1, setSubmitted1] = useState('')
-  const [submitted2, setSubmitted2] = useState('')
-  const [showLevenshteinLesson, setShowLevenshteinLesson] = useState(false)
+const ALGORITHM_DESCRIPTIONS: Record<string, string> = {
+  levenshtein: "Edit distance — counts insertions, deletions, substitutions",
+  jaro_winkler: "Prefix-weighted similarity — good for short names",
+  sorensen_dice: "Bigram-based — detects shared word structure",
+  cosine: "N-gram cosine similarity — robust to reordering",
+  metaphone: "Phonetic encoding — matches sounds like 'ck'/'k'",
+  nysiis: "NYSIIS phonetic — better than Soundex for surnames",
+  soundex: "Classic phonetic code — historical name matching",
+  mra: "Match Rating Algorithm — designed for name comparison",
+  jaro: "Jaro similarity — ancestor of Jaro-Winkler",
+  monge_elkan: "Affine-gap asymmetric similarity — great for entities",
+  needleman_wunsch: "Global sequence alignment — structural matching",
+  gotoh: "Gotoh alignment — affine gaps, very thorough",
+  overlap: "Overlap coefficient — shared substring ratio",
+  tversky: "Generalized similarity — partial matching",
+  longest_common_subsequence: "LCS length — word/sequence order matters",
+  lcsubstr: "Longest common substring — contiguous matches",
+  prefix: "Common prefix length — abbreviation detection",
+  suffix: "Common suffix length — word ending matching",
+  identity: "Exact match — 1.0 or 0.0 only",
+  compression: "Normalized compression — overall similarity",
+  entropy: "Entropy-based — pattern complexity comparison",
+};
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['compare', submitted1, submitted2],
-    queryFn: () => compare(submitted1, submitted2).then(r => r.data),
-    enabled: submitted1.length > 0 && submitted2.length > 0,
-  })
+export function ConsolidatedComparison() {
+  const [text1, setText1] = useState("");
+  const [text2, setText2] = useState("");
+  const [submitted1, setSubmitted1] = useState("");
+  const [submitted2, setSubmitted2] = useState("");
+
+  const { data, isLoading, error } = useCompare(submitted1, submitted2);
 
   const handleCompare = () => {
-    setSubmitted1(text1)
-    setSubmitted2(text2)
-  }
+    setSubmitted1(text1);
+    setSubmitted2(text2);
+  };
 
-  const sortedScores = data
+  const levenshteinScore = data?.scores?.levenshtein ?? 0;
+  const bestScore = data?.scores
+    ? Math.max(...Object.entries(data.scores)
+        .filter(([k]) => k !== "identity")
+        .map(([, v]) => v))
+    : 0;
+  const bestAlg = data?.scores
     ? Object.entries(data.scores)
-        .filter(([key]) => key !== 'identity')
-        .sort(([, a], [, b]) => b - a)
-    : []
-
-  const highScores = sortedScores.filter(([, s]) => s >= 0.7).length
-  const mediumScores = sortedScores.filter(([, s]) => s >= 0.4 && s < 0.7).length
-  const lowScores = sortedScores.filter(([, s]) => s < 0.4).length
-
-  const levenshteinScore = data?.scores['levenshtein'] ?? null
-  const isLevenshteinHigh = levenshteinScore !== null && levenshteinScore >= 0.7
-  const isLevenshteinLow = levenshteinScore !== null && levenshteinScore < 0.4
+        .filter(([k]) => k !== "identity")
+        .reduce((a, b) => (b[1] > a[1] ? b : a))[0]
+    : null;
 
   return (
-    <Box>
-      <Typography variant="h3" gutterBottom>
-        Consolidated Comparison
-      </Typography>
-      <Typography color="text.secondary" sx={{ mb: 4 }}>
-        Enter two strings and see all 21 algorithms scored side-by-side with visual bars and rankings
-      </Typography>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
+          Consolidated Comparison
+        </Typography>
+        <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.6)" }}>
+          Compare two strings across all 21 algorithms simultaneously. See which ones
+          succeed or fail on hard cases.
+        </Typography>
+      </Box>
 
-      <Paper sx={{ p: 3, mb: 4, bgcolor: 'background.paper' }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid size={{ xs: 12, md: 5 }}>
-            <TextField
-              fullWidth
-              label="First string"
-              value={text1}
-              onChange={(e) => setText1(e.target.value)}
-              placeholder="e.g., International Business Machines"
-              onKeyDown={(e) => e.key === 'Enter' && handleCompare()}
+      {/* Why Levenshtein alone fails */}
+      <Paper
+        sx={{
+          p: 3,
+          mb: 4,
+          background: "linear-gradient(135deg, rgba(255,82,82,0.08) 0%, rgba(124,77,255,0.08) 100%)",
+          border: "1px solid rgba(255,82,82,0.25)",
+        }}
+      >
+        <Typography variant="h6" sx={{ mb: 1, color: "#ff5252" }}>
+          ⚠️ Why Levenshtein Distance Alone Is Not Enough
+        </Typography>
+        <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", mb: 2 }}>
+          Levenshtein counts character edits — but it struggles with:
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}>
+          {[
+            "Abbreviation expansion (IBM vs International Business Machines)",
+            "Word reordering (Acme Corp vs Corp Acme)",
+            "Phonetic similarity (García vs Garcia)",
+            "Prefix/suffix matching (Corp vs Corporation)",
+            "Transliteration (Москва vs Moskva)",
+          ].map((item) => (
+            <Chip
+              key={item}
+              label={item}
+              size="small"
+              sx={{
+                backgroundColor: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.15)",
+              }}
             />
-          </Grid>
-          <Grid size={{ xs: 12, md: 'auto' }}>
-            <Button
-              variant="contained"
-              size="large"
-              onClick={handleCompare}
-              disabled={!text1 || !text2 || isLoading}
-              startIcon={<CompareArrows />}
-            >
-              Compare
-            </Button>
-          </Grid>
-          <Grid size={{ xs: 12, md: 5 }}>
-            <TextField
-              fullWidth
-              label="Second string"
-              value={text2}
-              onChange={(e) => setText2(e.target.value)}
-              placeholder="e.g., IBM"
-              onKeyDown={(e) => e.key === 'Enter' && handleCompare()}
-            />
-          </Grid>
-        </Grid>
+          ))}
+        </Box>
+        <Alert severity="warning" sx={{ background: "rgba(255,215,64,0.08)", border: "1px solid rgba(255,215,64,0.3)" }}>
+          <Typography variant="body2">
+            <strong>Best practice:</strong> Use a combination of algorithms. Look at Jaro-Winkler
+            for name matching, Sorensen-Dice for word structure, Metaphone/NYSIIS for phonetic
+            variants, and Monge-Elkan for complex entity matching.
+          </Typography>
+        </Alert>
       </Paper>
 
-      {isLoading && <LinearProgress sx={{ mb: 4 }} />}
+      {/* Input Section */}
+      <Paper sx={{ p: 3, mb: 4, border: "1px solid rgba(255,255,255,0.08)" }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Enter Two Strings to Compare
+        </Typography>
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 2, mb: 2 }}>
+          <TextField
+            label="String A"
+            value={text1}
+            onChange={(e) => setText1(e.target.value)}
+            fullWidth
+            size="small"
+            placeholder="e.g., International Business Machines"
+          />
+          <Typography sx={{ display: "flex", alignItems: "center", color: "rgba(255,255,255,0.3)" }}>
+            vs
+          </Typography>
+          <TextField
+            label="String B"
+            value={text2}
+            onChange={(e) => setText2(e.target.value)}
+            fullWidth
+            size="small"
+            placeholder="e.g., IBM"
+          />
+        </Box>
+        <Button
+          variant="contained"
+          onClick={handleCompare}
+          disabled={!text1.trim() || !text2.trim() || isLoading}
+          sx={{ px: 4 }}
+        >
+          {isLoading ? "Computing..." : "Compare All Algorithms"}
+        </Button>
+      </Paper>
 
-      {data && !isLoading && (
+      {/* Results */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Backend error. Is the FastAPI server running on port 8000?
+        </Alert>
+      )}
+
+      {data && (
         <>
-          <Alert
-            severity={isLevenshteinLow && highScores > 5 ? 'error' : 'info'}
-            sx={{ mb: 3 }}
-            icon={<Warning />}
-            action={
-              <Button
-                color="inherit"
-                size="small"
-                onClick={() => setShowLevenshteinLesson(!showLevenshteinLesson)}
-              >
-                {showLevenshteinLesson ? 'Hide' : 'Why?'}
-              </Button>
-            }
+          {/* Levenshtein alone warning */}
+          <Paper
+            sx={{
+              p: 2,
+              mb: 3,
+              background: levenshteinScore > 0.7 ? "rgba(0,230,118,0.06)" : "rgba(255,82,82,0.06)",
+              border: `1px solid ${levenshteinScore > 0.7 ? "#00e67633" : "#ff525233"}`,
+            }}
           >
-            {isLevenshteinLow && highScores > 5 ? (
-              <>
-                <strong>Levenshtein failed here!</strong> Score: {levenshteinScore?.toFixed(2)} but{' '}
-                {highScores} other algorithms score this as a match. This is a classic hard positive.
-              </>
-            ) : isLevenshteinHigh && lowScores > 5 ? (
-              <>
-                <strong>Levenshtein passed but {lowScores} algorithms disagree.</strong> This might be a hard
-                negative. Check the algorithm rankings below.
-              </>
-            ) : (
-              <>
-                Levenshtein score: {levenshteinScore?.toFixed(2)} | High scores: {highScores} | Medium:{' '}
-                {mediumScores} | Low: {lowScores}
-              </>
-            )}
-          </Alert>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              Levenshtein-Only Verdict:
+            </Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontFamily: "monospace",
+                color: levenshteinScore > 0.7 ? "#00e676" : "#ff5252",
+                mb: 1,
+              }}
+            >
+              {levenshteinScore.toFixed(4)}
+            </Typography>
+            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.6)" }}>
+              {levenshteinScore > 0.7
+                ? "Levenshtein says: MATCH — but this may be wrong for abbreviations, reordering, or phonetic variants."
+                : levenshteinScore < 0.3
+                ? "Levenshtein says: NO MATCH — but this may be wrong for transliterations or cultural name variations."
+                : "Levenshtein is uncertain — check other algorithms for a clearer picture."}
+            </Typography>
+          </Paper>
 
-          <Alert severity="warning" sx={{ mb: 3 }} style={{ display: showLevenshteinLesson ? 'flex' : 'none' }}>
-            <Typography variant="h6" gutterBottom>
-              Why Levenshtein Distance Fails on Abbreviations
-            </Typography>
-            <Typography paragraph>
-              Levenshtein distance counts character-level edits needed to transform one string into another.
-              For "International Business Machines" (28 chars) vs "IBM" (3 chars), you need to:
-            </Typography>
-            <Typography component="pre" sx={{ fontFamily: 'monospace', bgcolor: 'rgba(0,0,0,0.2)', p: 1 }}>
-{`Levenshtein distance = 25 edits
-Normalized = (28-25)/28 = 0.11`}
-            </Typography>
-            <Typography paragraph sx={{ mt: 2 }}>
-              But these SHOULD match! Algorithms that understand semantics, abbreviations, or phonetic similarity
-              handle this correctly.
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 2 }}>
-              <Chip label="Use Jaro-Winkler for names" color="success" size="small" />
-              <Chip label="Use Metaphone for sounds" color="success" size="small" />
-              <Chip label="Use Sorensen-Dice for word overlap" color="success" size="small" />
-              <Chip label="Use Cosine for n-gram patterns" color="success" size="small" />
+          {/* Best algorithm */}
+          {bestAlg && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1, color: "rgba(255,255,255,0.6)" }}>
+                Highest Scoring Algorithm:
+              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Typography variant="h5" sx={{ fontFamily: "monospace", color: "#7c4dff" }}>
+                  {bestAlg.replace(/_/g, " ")}
+                </Typography>
+                <Chip
+                  label={`${bestScore.toFixed(4)}`}
+                  sx={{ backgroundColor: "rgba(124,77,255,0.15)", border: "1px solid #7c4dff44" }}
+                />
+                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.5)" }}>
+                  {ALGORITHM_DESCRIPTIONS[bestAlg] || ""}
+                </Typography>
+              </Box>
             </Box>
-          </Alert>
+          )}
 
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Paper sx={{ p: 2, bgcolor: 'background.paper', height: '100%' }}>
-                <Typography variant="h6" gutterBottom>
-                  Algorithm Rankings
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                  Sorted by similarity score (highest to lowest)
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {sortedScores.map(([name, score], index) => {
-                    const info = algorithmDescriptions[name]
-                    const isTop = index === 0
-                    const isLev = name === 'levenshtein'
-                    return (
-                      <Box
-                        key={name}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          p: 1,
-                          borderRadius: 1,
-                          bgcolor: isLev ? 'rgba(124,77,255,0.1)' : 'transparent',
-                          border: isLev ? '1px solid' : 'none',
-                          borderColor: 'primary.main',
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            width: 20,
-                            color: isTop ? 'warning.main' : 'text.secondary',
-                            fontWeight: isTop ? 700 : 400,
-                          }}
-                        >
-                          {index + 1}
-                        </Typography>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: isLev ? 700 : 500,
-                              color: isLev ? 'primary.main' : 'text.primary',
-                            }}
-                          >
-                            {info?.name || name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {info?.description}
-                          </Typography>
-                        </Box>
-                        <Chip
-                          label={score.toFixed(2)}
-                          size="small"
-                          color={score >= 0.7 ? 'success' : score >= 0.4 ? 'warning' : 'error'}
-                        />
-                      </Box>
-                    )
-                  })}
-                </Box>
-              </Paper>
-            </Grid>
+          {/* All scores */}
+          <AlgorithmGrid scores={data.scores} expectedMatch={true} />
 
-            <Grid size={{ xs: 12, md: 8 }}>
-              <Paper sx={{ p: 3, bgcolor: 'background.paper' }}>
-                <Typography variant="h6" gutterBottom>
-                  Visual Score Comparison
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  {sortedScores.map(([name, score]) => {
-                    const info = algorithmDescriptions[name]
-                    const isLev = name === 'levenshtein'
-                    const color =
-                      score >= 0.7 ? 'success.main' : score >= 0.4 ? 'warning.main' : 'error.main'
-
-                    return (
-                      <Box key={name}>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            mb: 0.5,
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontFamily: 'monospace',
-                                fontWeight: isLev ? 700 : 500,
-                                color: isLev ? 'primary.main' : 'text.primary',
-                              }}
-                            >
-                              {info?.name || name}
-                            </Typography>
-                            {isLev && (
-                              <Chip
-                                label="LEV"
-                                size="small"
-                                color="primary"
-                                sx={{ height: 18, fontSize: '0.6rem' }}
-                              />
-                            )}
-                          </Box>
-                          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
-                            {score.toFixed(3)}
-                          </Typography>
-                        </Box>
-                        <LinearProgress
-                          variant="determinate"
-                          value={score * 100}
-                          sx={{
-                            height: 24,
-                            borderRadius: 1,
-                            bgcolor: 'rgba(255,255,255,0.05)',
-                            '& .MuiLinearProgress-bar': {
-                              bgcolor: color,
-                              borderRadius: 1,
-                            },
-                          }}
-                        />
-                      </Box>
-                    )
-                  })}
-                </Box>
-
-                <Divider sx={{ my: 3 }} />
-
-                <Typography variant="h6" gutterBottom>
-                  Score Distribution
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 4 }}>
-                    <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'success.dark', borderRadius: 2, opacity: 0.8 }}>
-                      <CheckCircle sx={{ fontSize: 32, mb: 1 }} />
-                      <Typography variant="h4">{highScores}</Typography>
-                      <Typography variant="caption">High (≥0.7)</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid size={{ xs: 4 }}>
-                    <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'warning.dark', borderRadius: 2, opacity: 0.8 }}>
-                      <Warning sx={{ fontSize: 32, mb: 1 }} />
-                      <Typography variant="h4">{mediumScores}</Typography>
-                      <Typography variant="caption">Medium (0.4-0.7)</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid size={{ xs: 4 }}>
-                    <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'error.dark', borderRadius: 2, opacity: 0.8 }}>
-                      <Cancel sx={{ fontSize: 32, mb: 1 }} />
-                      <Typography variant="h4">{lowScores}</Typography>
-                      <Typography variant="caption">Low (&lt;0.4)</Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
-
-                <Divider sx={{ my: 3 }} />
-
-                <Typography variant="h6" gutterBottom>
-                  Key Observations
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {isLevenshteinLow && highScores > 3 && (
-                    <Alert severity="error">
-                      <strong>Levenshtein underestimates similarity.</strong> This pair has {highScores} algorithms
-                      scoring ≥0.7, but Levenshtein gives only {levenshteinScore?.toFixed(2)}.
-                      <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                        Consider using Jaro-Winkler, Sorensen-Dice, or Metaphone instead.
-                      </Typography>
-                    </Alert>
-                  )}
-                  {isLevenshteinHigh && lowScores > 3 && (
-                    <Alert severity="warning">
-                      <strong>Levenshtein overestimates similarity.</strong> While Levenshtein scores{' '}
-                      {levenshteinScore?.toFixed(2)}, {lowScores} algorithms score this as dissimilar.
-                      <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                        Cross-check with phonetic algorithms or compression-based similarity.
-                      </Typography>
-                    </Alert>
-                  )}
-                  {highScores > 10 && (
-                    <Alert severity="success">
-                      <strong>Strong consensus.</strong> {highScores} out of {sortedScores.length} algorithms agree
-                      these strings are similar.
-                    </Alert>
-                  )}
-                  {lowScores > 10 && (
-                    <Alert severity="info">
-                      <strong>Strong disagreement.</strong> Only {sortedScores.length - lowScores} algorithms see
-                      similarity while {lowScores} see dissimilarity.
-                    </Alert>
-                  )}
-                  {!isLevenshteinLow && !isLevenshteinHigh && highScores <= 10 && lowScores <= 10 && (
-                    <Alert severity="info">
-                      <strong>Moderate agreement.</strong> Levenshtein score ({levenshteinScore?.toFixed(2)}) is
-                      consistent with other algorithm scores.
-                    </Alert>
-                  )}
-                </Box>
-              </Paper>
-            </Grid>
-          </Grid>
-
-          <Paper sx={{ p: 3, mt: 4, bgcolor: 'background.paper' }}>
-            <Typography variant="h6" gutterBottom>
-              Side-by-Side Comparison
+          {/* Algorithm legend */}
+          <Paper sx={{ p: 2, mt: 3, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <Typography variant="subtitle2" sx={{ mb: 2 }}>
+              Algorithm Quick Reference
             </Typography>
-            <Grid container spacing={4}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  String 1
-                </Typography>
-                <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
-                  <Typography sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>{submitted1}</Typography>
-                </Paper>
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  String 2
-                </Typography>
-                <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
-                  <Typography sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>{submitted2}</Typography>
-                </Paper>
-              </Grid>
+            <Grid container spacing={1}>
+              {Object.entries(ALGORITHM_DESCRIPTIONS).map(([alg, desc]) => (
+                <Grid item xs={12} sm={6} key={alg}>
+                  <Box sx={{ display: "flex", gap: 1, py: 0.5 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontFamily: "monospace", color: "#7c4dff", minWidth: 140 }}
+                    >
+                      {alg.replace(/_/g, " ")}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.5)" }}>
+                      {desc}
+                    </Typography>
+                  </Box>
+                </Grid>
+              ))}
             </Grid>
           </Paper>
         </>
       )}
-
-      {!data && !isLoading && (
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <CompareArrows sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary">
-            Enter two strings above to compare all algorithms
-          </Typography>
-          <Typography color="text.disabled" sx={{ mt: 1 }}>
-            Try "International Business Machines" vs "IBM" to see Levenshtein fail
-          </Typography>
-        </Box>
-      )}
-    </Box>
-  )
+    </Container>
+  );
 }

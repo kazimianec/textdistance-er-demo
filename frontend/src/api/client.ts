@@ -1,7 +1,5 @@
 import axios from "axios";
 
-const api = axios.create({ baseURL: "http://localhost:8000" });
-
 export interface AlgorithmInfo {
   name: string;
   description: string;
@@ -14,6 +12,8 @@ export interface CompareResponse {
   text2: string;
   scores: Record<string, number>;
 }
+
+const api = axios.create({ baseURL: "" }); // Uses Vite proxy
 
 export const compare = (text1: string, text2: string) =>
   api.post<CompareResponse>("/compare", { text1, text2 });
