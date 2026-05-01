@@ -7,10 +7,7 @@ import {
   Button,
   Paper,
   Alert,
-  Divider,
   Chip,
-  Card,
-  CardContent,
   Grid,
 } from "@mui/material";
 import { AlgorithmGrid } from "../components/ScoreBar";
@@ -21,23 +18,26 @@ const ALGORITHM_DESCRIPTIONS: Record<string, string> = {
   jaro_winkler: "Prefix-weighted similarity — good for short names",
   sorensen_dice: "Bigram-based — detects shared word structure",
   cosine: "N-gram cosine similarity — robust to reordering",
-  metaphone: "Phonetic encoding — matches sounds like 'ck'/'k'",
-  nysiis: "NYSIIS phonetic — better than Soundex for surnames",
-  soundex: "Classic phonetic code — historical name matching",
-  mra: "Match Rating Algorithm — designed for name comparison",
   jaro: "Jaro similarity — ancestor of Jaro-Winkler",
-  monge_elkan: "Affine-gap asymmetric similarity — great for entities",
-  needleman_wunsch: "Global sequence alignment — structural matching",
-  gotoh: "Gotoh alignment — affine gaps, very thorough",
+  ratcliff_obershelp: "Pattern matching with sequence alignment",
   overlap: "Overlap coefficient — shared substring ratio",
-  tversky: "Generalized similarity — partial matching",
+  jaccard: "Jaccard index — set-based similarity",
+  dice: "Dice coefficient — bigram-based",
+  damerau_levenshtein: "Edit distance allowing transpositions",
+  editex: "Phonetic-aware edit distance",
+  strcmp95: "String comparison optimized for names/addresses",
+  hamming: "Position-based distance — requires equal length",
+  mra: "Match Rating Algorithm — designed for name comparison",
+  monge_elkan: "Asymmetric similarity — great for entities",
+  needleman_wunsch: "Global sequence alignment with gap penalty",
+  gotoh: "Gotoh alignment — affine gaps, very thorough",
+  tversky: "Generalized similarity — partial/abbreviation matching",
   longest_common_subsequence: "LCS length — word/sequence order matters",
   lcsubstr: "Longest common substring — contiguous matches",
   prefix: "Common prefix length — abbreviation detection",
   suffix: "Common suffix length — word ending matching",
+  entropy_ncd: "Normalized compression distance — overall similarity",
   identity: "Exact match — 1.0 or 0.0 only",
-  compression: "Normalized compression — overall similarity",
-  entropy: "Entropy-based — pattern complexity comparison",
 };
 
 export function ConsolidatedComparison() {
@@ -227,7 +227,7 @@ export function ConsolidatedComparison() {
             </Typography>
             <Grid container spacing={1}>
               {Object.entries(ALGORITHM_DESCRIPTIONS).map(([alg, desc]) => (
-                <Grid item xs={12} sm={6} key={alg}>
+                <Grid size={{ xs: 12, sm: 6 }} key={alg}>
                   <Box sx={{ display: "flex", gap: 1, py: 0.5 }}>
                     <Typography
                       variant="body2"
