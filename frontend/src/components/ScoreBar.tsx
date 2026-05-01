@@ -23,10 +23,6 @@ export function ScoreBar({
       ? "#ff5252"
       : "#7c4dff";
 
-  // Special highlighting for hard positive cases
-  const isHPFail = hardPositiveFail;
-  const isHPSuccess = hardPositiveSuccess;
-
   return (
     <Box sx={{ mb: 1.5 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
@@ -34,7 +30,7 @@ export function ScoreBar({
           <Typography variant="body2" sx={{ fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>
             {name}
           </Typography>
-          {isHPFail && (
+          {hardPositiveFail && (
             <Chip
               label="✗ Levenshtein fails"
               size="small"
@@ -47,7 +43,7 @@ export function ScoreBar({
               }}
             />
           )}
-          {isHPSuccess && (
+          {hardPositiveSuccess && (
             <Chip
               label="✓ Correct"
               size="small"

@@ -46,7 +46,7 @@ npm run dev
 
 ### 24 Algorithms
 
-|| Algorithm | Type | Best For |
+| Algorithm | Type | Best For |
 |-----------|------|----------|
 | Levenshtein | distance | Typo detection (but not enough alone) |
 | Jaro-Winkler | similarity | Name matching with prefix credit |
