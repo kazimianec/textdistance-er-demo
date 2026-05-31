@@ -1,6 +1,6 @@
 # textdistance ER Demo
 
-Entity Resolution with 21 string distance/similarity algorithms from [`textdistance`](https://github.com/orsinium/textdistance).
+Entity Resolution with 24 string distance/similarity algorithms from [`textdistance`](https://github.com/orsinium/textdistance).
 
 **Key insight:** Levenshtein distance alone is **not sufficient** for entity resolution. This demo shows why — and which algorithms work better for specific hard cases.
 
@@ -44,7 +44,7 @@ npm run dev
 | 13 | **Scientific Names** | Generic vs brand drug names, gene symbol vs full name |
 | 14 | **Historical Names** | Constantinople→Istanbul, Burma→Myanmar, AT&T→Bell Labs |
 
-### 21 Algorithms
+### 24 Algorithms
 
 | Algorithm | Type | Best For |
 |-----------|------|----------|
@@ -52,23 +52,26 @@ npm run dev
 | Jaro-Winkler | similarity | Name matching with prefix credit |
 | Sorensen-Dice | similarity | Shared bigrams, word reordering |
 | Cosine | similarity | N-gram patterns, abbreviation expansion |
-| Metaphone | phonetic | Phonetic variants (ck/k sounds) |
-| NYSIIS | phonetic | Surname phonetic matching |
-| Soundex | phonetic | Historical name matching |
-| MRA | phonetic | Name comparison, cultural variants |
 | Jaro | similarity | Short string matching |
+| Ratcliff-Obershelp | similarity | Pattern matching, word reordering |
+| Overlap | similarity | Shared substring ratio |
+| Jaccard | similarity | Set-based similarity |
+| Dice | similarity | Bigram matching |
+| Damerau-Levenshtein | distance | Typos with transpositions |
+| Editex | distance | Phonetic-aware matching |
+| StrCmp95 | similarity | Name/address comparison |
+| Hamming | distance | Fixed-length codes |
+| MRA | similarity | Name comparison, cultural variants |
 | Monge-Elkan | similarity | Complex entity matching |
 | Needleman-Wunsch | similarity | Global sequence alignment |
-| Gotoh | similarity | Affine gap sequence alignment |
-| Overlap | similarity | Shared substring ratio |
-| Tversky | similarity | Partial matching, abbreviation detection |
+| Gotoh | similarity | Affine gap alignment |
+| Tversky | similarity | Partial matching, abbreviations |
 | Longest Common Subsequence | similarity | Word order matters |
 | LCSubstring | similarity | Contiguous shared substrings |
 | Prefix | similarity | Abbreviation detection |
 | Suffix | similarity | Word ending matching |
+| Entropy NCD | similarity | Overall similarity via compression |
 | Identity | similarity | Exact match (1.0 or 0.0) |
-| Compression | similarity | Overall similarity via NCD |
-| Entropy | similarity | Pattern complexity comparison |
 
 ### Hard Positives vs Hard Negatives
 
@@ -110,7 +113,7 @@ npx playwright test
 ```
 textdistance-er-demo/
 ├── backend/
-│   ├── src/app/main.py     # FastAPI + 21 algorithm computations
+│   ├── src/app/main.py     # FastAPI + 24 algorithm computations
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/

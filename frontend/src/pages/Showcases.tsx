@@ -5,15 +5,10 @@ import {
   Typography,
   Tabs,
   Tab,
-  TextField,
-  Button,
   Paper,
   Alert,
-  Divider,
-  Grid,
 } from "@mui/material";
 import { ComparisonCard } from "../components/ComparisonCard";
-import { AlgorithmGrid } from "../components/ScoreBar";
 import { useCompare } from "../hooks/useCompare";
 
 // ─── Showcase Data ────────────────────────────────────────────────────────────
@@ -673,8 +668,6 @@ const SHOWCASES: Showcase[] = [
 
 export function Showcases() {
   const [activeTab, setActiveTab] = useState(0);
-  const [customText1, setCustomText1] = useState("");
-  const [customText2, setCustomText2] = useState("");
   const showcase = SHOWCASES[activeTab];
 
   return (

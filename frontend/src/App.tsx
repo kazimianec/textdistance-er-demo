@@ -7,7 +7,6 @@ import {
   Typography,
   Tab,
   Tabs,
-  Container,
 } from "@mui/material";
 import { theme } from "./theme/theme";
 import { Showcases } from "./pages/Showcases";
@@ -48,7 +47,7 @@ function App() {
               textdistance ER Demo
             </Typography>
             <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.4)", mr: 2 }}>
-              Entity Resolution with 21 algorithms
+              Entity Resolution with 24 algorithms
             </Typography>
           </Toolbar>
           <Tabs

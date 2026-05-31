@@ -1,4 +1,4 @@
-import { Box, Typography, Paper, Divider } from "@mui/material";
+import { Box, Typography, Paper } from "@mui/material";
 import { AlgorithmGrid } from "./ScoreBar";
 
 interface ComparisonCardProps {
@@ -140,7 +140,7 @@ export function ComparisonCard({
         </Box>
       </Box>
 
-      <AlgorithmGrid scores={scores} expectedMatch={expectedMatch} />
+      <AlgorithmGrid scores={scores} expectedMatch={expectedMatch} isHardPositive={type === "hard_positive"} />
     </Paper>
   );
 }

@@ -131,8 +131,32 @@ ALGORITHMS: list[dict[str, Any]] = [
     {
         "name": "mra",
         "description": "Match Rating Algorithm - designed for name comparison",
-        "type": "distance",
+        "type": "similarity",
         "best_for": ["name matching", "cultural variations"],
+    },
+    {
+        "name": "monge_elkan",
+        "description": "Monge-Elkan - asymmetric similarity for complex entity matching",
+        "type": "similarity",
+        "best_for": ["entity matching", "word reordering", "abbreviation detection"],
+    },
+    {
+        "name": "needleman_wunsch",
+        "description": "Needleman-Wunsch - global sequence alignment with gap penalty",
+        "type": "similarity",
+        "best_for": ["global alignment", "structural matching"],
+    },
+    {
+        "name": "gotoh",
+        "description": "Gotoh - affine gap sequence alignment",
+        "type": "similarity",
+        "best_for": ["sequence alignment", "thorough matching"],
+    },
+    {
+        "name": "tversky",
+        "description": "Tversky index - generalized similarity with configurable parameters",
+        "type": "similarity",
+        "best_for": ["partial matching", "abbreviation detection", "asymmetric matching"],
     },
     {
         "name": "longest_common_subsequence",
@@ -151,6 +175,18 @@ ALGORITHMS: list[dict[str, Any]] = [
         "description": "Common prefix length (normalized)",
         "type": "similarity",
         "best_for": ["shared prefixes", "abbreviations"],
+    },
+    {
+        "name": "suffix",
+        "description": "Common suffix length (normalized)",
+        "type": "similarity",
+        "best_for": ["shared suffixes", "word endings"],
+    },
+    {
+        "name": "entropy_ncd",
+        "description": "Normalized Compression Distance via entropy - overall similarity",
+        "type": "similarity",
+        "best_for": ["overall similarity", "pattern complexity"],
     },
     {
         "name": "identity",
@@ -173,6 +209,11 @@ def _normalize_length(score: float, max_len: float) -> float:
     if max_len == 0:
         return 0.0
     return round(min(score / max_len, 1.0), 4)
+
+
+def _normalize_ncd(score: float) -> float:
+    """Normalize an NCD score (0 = identical, 1 = completely different) to similarity."""
+    return round(max(0, 1 - score), 4)
 
 
 def compute_similarities(text1: str, text2: str) -> dict[str, float]:
@@ -233,9 +274,26 @@ def compute_similarities(text1: str, text2: str) -> dict[str, float]:
     else:
         results["hamming"] = 0.0
 
-    # MRA (distance - lower is more similar)
-    mra_dist = td.mra(t1, t2)
-    results["mra"] = _normalize_distance(mra_dist, max(mra_dist, 1))
+    # MRA (similarity - rating 0-6+, normalize by dividing by max possible)
+    # Max possible rating is roughly min(len(t1), len(t2)) * 2
+    mra_raw = td.mra(t1, t2)
+    mra_max = min(len(t1), len(t2)) * 2
+    results["mra"] = round(mra_raw / max(mra_max, 1), 4)
+
+    # Monge-Elkan (similarity - already 0-1, normalize by length)
+    monge_elkan_raw = td.monge_elkan(t1, t2)
+    results["monge_elkan"] = _normalize_distance(monge_elkan_raw, max_len)
+
+    # Needleman-Wunsch (normalized - negative distance, normalize by max_len)
+    nw_raw = td.needleman_wunsch(t1, t2)
+    results["needleman_wunsch"] = _normalize_distance(abs(nw_raw), max_len)
+
+    # Gotoh (normalized - negative distance, normalize by max_len)
+    gotoh_raw = td.gotoh(t1, t2)
+    results["gotoh"] = _normalize_distance(abs(gotoh_raw), max_len)
+
+    # Tversky (similarity - already 0-1)
+    results["tversky"] = round(td.tversky(t1, t2), 4)
 
     # Longest common subsequence (normalized)
     lcs_len = len(td.lcsseq(t1, t2))
@@ -248,6 +306,14 @@ def compute_similarities(text1: str, text2: str) -> dict[str, float]:
     # Prefix similarity (normalized)
     prefix_len = len(td.prefix(t1, t2))
     results["prefix"] = _normalize_length(prefix_len, max_len)
+
+    # Suffix similarity (normalized)
+    suffix_len = len(td.postfix(t1, t2))
+    results["suffix"] = _normalize_length(suffix_len, max_len)
+
+    # Entropy NCD (already 0-1, but invert for similarity)
+    entropy_raw = td.entropy_ncd(t1, t2)
+    results["entropy_ncd"] = _normalize_ncd(entropy_raw)
 
     # Identity (exact match)
     results["identity"] = 1.0 if t1 == t2 else 0.0

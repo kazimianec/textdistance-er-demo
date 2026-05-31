@@ -242,7 +242,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Initial + city abbreviation - hard for all algorithms',
-        highlightHardPositive: ['jaro_winkler', 'metaphone'],
+        highlightHardPositive: ['jaro_winkler'],
       },
       {
         id: 'pa-4',
@@ -337,7 +337,6 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'English vs Russian transliteration',
-        highlightHardPositive: ['metaphone', 'soundex', 'nysiis'],
       },
       {
         id: 'tr-2',
@@ -362,7 +361,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Arabic transliteration variants',
-        highlightHardPositive: ['metaphone', 'jaro_winkler', 'nysiis'],
+        highlightHardPositive: ['jaro_winkler'],
       },
       {
         id: 'tr-5',
@@ -379,7 +378,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'German umlaut transliteration',
-        highlightHardPositive: ['metaphone', 'jaro_winkler'],
+        highlightHardPositive: ['jaro_winkler'],
       },
     ],
   },
@@ -504,7 +503,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Umlaut + company type variants',
-        highlightHardPositive: ['metaphone', 'jaro_winkler'],
+        highlightHardPositive: ['jaro_winkler'],
       },
       {
         id: 'mn-6',
@@ -707,7 +706,6 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Dick from Richard - non-obvious nickname',
-        highlightHardPositive: ['metaphone', 'nysiis'],
       },
       {
         id: 'nl-2',
@@ -716,7 +714,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Betty from Elizabeth - common but hard',
-        highlightHardPositive: ['metaphone', 'jaro_winkler'],
+        highlightHardPositive: ['jaro_winkler'],
       },
       {
         id: 'nl-3',
@@ -749,7 +747,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Larry from Lawrence + apostrophe typo',
-        highlightHardPositive: ['metaphone', 'jaro_winkler'],
+        highlightHardPositive: ['jaro_winkler'],
       },
       {
         id: 'nl-7',
@@ -783,7 +781,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'City renamed - no similarity whatsoever',
-        highlightHardPositive: ['metaphone', 'compression'],
+        highlightHardPositive: ['compression'],
       },
       {
         id: 'hn-2',
@@ -792,7 +790,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Old romanization vs pinyin',
-        highlightHardPositive: ['metaphone', 'compression'],
+        highlightHardPositive: ['compression'],
       },
       {
         id: 'hn-3',
@@ -801,7 +799,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Former capital name change',
-        highlightHardPositive: ['metaphone', 'compression'],
+        highlightHardPositive: ['compression'],
       },
       {
         id: 'hn-4',
@@ -926,8 +924,14 @@ export const algorithmDescriptions: Record<string, { name: string; description: 
   strcmp95: { name: 'Strcmp95', description: 'Name/address comparison' },
   hamming: { name: 'Hamming', description: 'Position-based (equal lengths)' },
   mra: { name: 'MRA', description: 'Match Rating Algorithm - name comparison' },
+  monge_elkan: { name: 'Monge-Elkan', description: 'Asymmetric similarity - complex entity matching' },
+  needleman_wunsch: { name: 'Needleman-Wunsch', description: 'Global sequence alignment with gap penalty' },
+  gotoh: { name: 'Gotoh', description: 'Affine gap sequence alignment' },
+  tversky: { name: 'Tversky', description: 'Generalized similarity - partial matching' },
   longest_common_subsequence: { name: 'LCS', description: 'Longest common subsequence' },
   lcsubstr: { name: 'LCSubstr', description: 'Longest common substring' },
   prefix: { name: 'Prefix', description: 'Common prefix length' },
+  suffix: { name: 'Suffix', description: 'Common suffix length' },
+  entropy_ncd: { name: 'Entropy NCD', description: 'Normalized compression distance - overall similarity' },
   identity: { name: 'Identity', description: 'Exact match (0 or 1)' },
 }
