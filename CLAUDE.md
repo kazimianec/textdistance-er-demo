@@ -7,8 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Backend (FastAPI)
 ```bash
 cd backend
-pip install -r requirements.txt
-uvicorn src.app.main:app --reload --port 8000
+poetry install
+poetry run uvicorn src.app.main:app --reload --port 8000
 ```
 
 ### Frontend (React + Vite)
