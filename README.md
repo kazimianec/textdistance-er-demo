@@ -14,8 +14,8 @@ Entity Resolution with 21 string distance/similarity algorithms from [`textdista
 ```bash
 # Backend
 cd backend
-pip install -r requirements.txt
-uvicorn src.app.main:app --reload --port 8000
+poetry install
+poetry run uvicorn src.app.main:app --reload --port 8000
 
 # Frontend
 cd frontend

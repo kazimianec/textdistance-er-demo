@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { compare, CompareResponse } from "../api/client";
+import { compare, type CompareResponse } from "../api/client";
 
 export function useCompare(text1: string, text2: string, enabled = true) {
   return useQuery<CompareResponse>({

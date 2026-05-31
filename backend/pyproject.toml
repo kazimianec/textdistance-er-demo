@@ -1,0 +1,19 @@
+[project]
+name = "textdistance-er-demo-backend"
+version = "0.1.0"
+description = "FastAPI backend for textdistance Entity Resolution demo"
+authors = [
+    {name = "kazimianec",email = "a.kazimianec@gmail.com"}
+]
+requires-python = "^3.12"
+dependencies = [
+    "fastapi (>=0.115.0)",
+    "uvicorn (>=0.30.0)",
+    "textdistance (>=4.6.0)",
+    "pydantic (>=2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
