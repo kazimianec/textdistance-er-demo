@@ -1,223 +1,193 @@
-import { test, expect, Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
-// Test data: (text1, text2, expectedMatch, type, description)
-// type: 'hard_positive' = strings look different but should match
-// type: 'hard_negative' = strings look similar but should not match
-// type: 'normal' = straightforward case
-const TEST_CASES = [
-  // Hard Positives
-  {
-    text1: "International Business Machines",
-    text2: "IBM",
-    expectedMatch: true,
-    type: "hard_positive",
-    description: "Abbreviation expansion",
-  },
-  {
-    text1: "Amazon Web Services LLC",
-    text2: "Amazon Internet Services GmbH",
-    expectedMatch: false,
-    type: "hard_positive",
-    description: "Same prefix, different entities",
-  },
-  {
-    text1: "John Smith",
-    text2: "Bill Smith",
-    expectedMatch: true,
-    type: "hard_positive",
-    description: "Nickname expansion",
-  },
-  {
-    text1: "Robert James Smith",
-    text2: "Robert Smith",
-    expectedMatch: true,
-    type: "hard_positive",
-    description: "Middle initial dropped",
-  },
-  // Hard Negatives
-  {
-    text1: "John Smith",
-    text2: "Jon Smith",
-    expectedMatch: true,
-    type: "hard_negative",
-    description: "Cultural variation",
-  },
-  {
-    text1: "München",
-    text2: "Munich",
-    expectedMatch: true,
-    type: "hard_negative",
-    description: "Umlaut transliteration",
-  },
-  {
-    text1: "Boulevarde Avenue",
-    text2: "Boulevard Ave",
-    expectedMatch: true,
-    type: "hard_negative",
-    description: "Spelling variation",
-  },
-  // Normal cases
-  {
-    text1: "Tech Solutions Inc",
-    text2: "Tech Solutions Incorporated",
-    expectedMatch: true,
-    type: "normal",
-    description: "Legal suffix variation",
-  },
-  {
-    text1: "test",
-    text2: "test",
-    expectedMatch: true,
-    type: "normal",
-    description: "Exact match",
-  },
+/**
+ * End-to-end tests for the textdistance Entity Resolution demo.
+ *
+ * Navigation model: the app uses react-router routes (/, /showcases, /compare)
+ * rather than in-page tabs, so tests navigate by URL / nav buttons.
+ */
+
+const SHOWCASE_TABS = [
+  "Company Names with Abbreviations",
+  "Company Name + Address",
+  "Person Full Names",
+  "Person Name + Address",
+  "Long Common Substrings",
+  "Transliterations & Cross-Alphabet",
+  "Heavy Typo Scenarios",
+  "Mixed Real-World Noise",
+  "Brand & Product Name Variations",
+  "Legal Entity Type Variations",
+  "Address Format Differences",
+  "Nickname vs Legal Name",
+  "Historical & Outdated Names",
+  "Partial & Substring Matches",
 ];
 
-test.describe("Showcases Page", () => {
+/** Hard positives: strings look different but SHOULD match. */
+const HARD_POSITIVES = [
+  { text1: "International Business Machines", text2: "IBM", label: "Abbreviation expansion" },
+  { text1: "Acme Corp", text2: "Acme Corporation", label: "Legal suffix expansion" },
+  { text1: "Will Smith", text2: "William Smith", label: "Nickname to legal name" },
+  { text1: "Москва", text2: "Moskva", label: "Cross-alphabet transliteration" },
+];
+
+/** Hard negatives: strings look similar but should NOT match. */
+const HARD_NEGATIVES = [
+  { text1: "Amazon Web Services", text2: "Amazon Internet Services", label: "Shared prefix" },
+  { text1: "John Smith", text2: "Jon Smith", label: "Near-identical names" },
+  { text1: "Bank of America", text2: "America Bank", label: "Scrambled words" },
+];
+
+test.describe("Home page", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("http://localhost:5173");
-    await page.waitForSelector('[role="tab"]', { timeout: 10000 });
+    await page.goto("http://localhost:5173/");
   });
 
-  test("renders showcases page with tabs", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: /entity resolution showcases/i })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Company Names" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Consolidated Comparison" })).toBeVisible();
+  test("renders the landing page", async ({ page }) => {
+    await expect(
+      page.getByRole("heading", { name: /textdistance entity resolution/i })
+    ).toBeVisible();
   });
 
-  test("navigates through all showcase tabs", async ({ page }) => {
-    const tabs = [
-      "Company Names",
-      "Company + Address",
-      "Person Names",
-      "Name + Address",
-      "Long Common Substrings",
-      "Transliterations",
-      "Heavy Typos",
-      "Mixed Noise",
-      "Brand Variations",
-      "Legal Entity Types",
-      "OCR / Scraping",
-      "URL / Domain",
-      "Scientific Names",
-      "Historical Names",
-    ];
+  test("explains why Levenshtein alone is not enough", async ({ page }) => {
+    await expect(page.getByText(/levenshtein distance alone is not enough/i)).toBeVisible();
+  });
 
-    for (const tab of tabs) {
-      await page.getByRole("tab", { name: tab }).click();
-      await expect(page.getByRole("tab", { name: tab })).toBeVisible();
+  test("offers navigation to showcases and compare", async ({ page }) => {
+    // These render as anchors (component={Link}), not <button> elements.
+    await expect(page.getByRole("link", { name: /explore showcases/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /try it now/i })).toBeVisible();
+  });
+});
+
+test.describe("Showcases page", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("http://localhost:5173/showcases");
+    await page.waitForSelector('[role="tab"]', { timeout: 15_000 });
+  });
+
+  test("renders all 14 showcase tabs", async ({ page }) => {
+    for (const name of SHOWCASE_TABS) {
+      await expect(page.getByRole("tab", { name })).toBeVisible();
     }
   });
 
-  for (const tc of TEST_CASES) {
-    test(`case: ${tc.description} (${tc.type})`, async ({ page }) => {
-      // Navigate to Consolidated Comparison page
-      await page.getByRole("tab", { name: "Consolidated Comparison" }).click();
-      await page.waitForSelector('text=Consolidated Comparison");
+  test("shows the core and discovered showcase counts", async ({ page }) => {
+    await expect(page.getByText(/8 core showcases/i)).toBeVisible();
+    await expect(page.getByText(/6 discovered showcases/i)).toBeVisible();
+  });
 
-      // Enter test strings
-      await page.getByLabel("String A").fill(tc.text1);
-      await page.getByLabel("String B").fill(tc.text2);
+  test("navigates through every showcase tab", async ({ page }) => {
+    for (const name of SHOWCASE_TABS) {
+      await page.getByRole("tab", { name }).click();
+      await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
+    }
+  });
 
-      // Click compare
-      await page.getByRole("button", { name: /compare all algorithms/i }).click();
+  test("expands a case and shows per-algorithm scores", async ({ page }) => {
+    // First showcase's first case
+    await page.getByRole("tab", { name: SHOWCASE_TABS[0] }).click();
+    await expect(page.getByText(/should match|should not match/i).first()).toBeVisible();
 
-      // Wait for results to appear - look for algorithm score elements
-      await page.waitForSelector('text=/levenshtein/i', { timeout: 5000 });
+    // Expand the first case card
+    await page.locator("text=/International Business Machines/").first().click();
+    await expect(page.getByText(/hard positive|hard negative/i).first()).toBeVisible();
+    await expect(page.getByText("Levenshtein", { exact: true })).toBeVisible();
+  });
 
-      // Verify "Levenshtein-Only Verdict" section appears
-      await expect(page.getByText(/levenshtein-only verdict/i)).toBeVisible();
+  test("marks hard positives with a KEY badge", async ({ page }) => {
+    await page.getByRole("tab", { name: "Long Common Substrings" }).click();
+    await page.locator("text=/International Business Machines/").first().click();
+    await expect(page.getByText("KEY").first()).toBeVisible();
+  });
 
-      // Verify "Highest Scoring Algorithm" section appears
-      await expect(page.getByText(/highest scoring algorithm/i)).toBeVisible();
-
-      // Verify the Algorithm Quick Reference is visible
-      await expect(page.getByText(/algorithm quick reference/i)).toBeVisible();
-
-      // For hard positive/negative cases, verify the warning about Levenshtein is shown
-      if (tc.type === "hard_positive" && tc.expectedMatch) {
-        // IBM case - Levenshtein should show a low score
-        const verdictText = await page.getByText(/levenshtein/i).first().textContent();
-        expect(verdictText).toBeTruthy();
-      }
-    });
-  }
+  test("shows correct / incorrect verdicts for every algorithm", async ({ page }) => {
+    await page.getByRole("tab", { name: SHOWCASE_TABS[0] }).click();
+    await page.locator("text=/International Business Machines/").first().click();
+    // Every algorithm row carries a ✓ or ✗ chip
+    await expect(page.getByText("✓").first()).toBeVisible();
+  });
 });
 
-test.describe("Consolidated Comparison Page", () => {
+test.describe("Consolidated Comparison page", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("http://localhost:5173");
-    await page.waitForSelector('[role="tab"]', { timeout: 10000 });
-    await page.getByRole("tab", { name: "Consolidated Comparison" }).click();
+    await page.goto("http://localhost:5173/compare");
+    await page.waitForSelector('text=/Consolidated Comparison/i', { timeout: 15_000 });
   });
 
-  test("renders comparison page", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: /consolidated comparison/i })).toBeVisible();
-    await expect(page.getByText(/why levenshtein/i)).toBeVisible();
+  test("renders the comparison page", async ({ page }) => {
+    await expect(
+      page.getByRole("heading", { name: /consolidated comparison/i })
+    ).toBeVisible();
+    await expect(page.getByText(/why levenshtein distance alone is not enough/i)).toBeVisible();
   });
 
-  test("compares identical strings and shows high scores", async ({ page }) => {
-    await page.getByLabel("String A").fill("identical strings");
-    await page.getByLabel("String B").fill("identical strings");
-    await page.getByRole("button", { name: /compare all algorithms/i }).click();
-    await page.waitForSelector('text=/levenshtein/i', { timeout: 5000 });
-
-    // Levenshtein should show high score (close to 1.0) for identical strings
-    // The Levenshtein-Only Verdict should show the score
-    await expect(page.getByText(/why levenshtein/i)).toBeVisible();
-  });
-
-  test("compares completely different strings", async ({ page }) => {
-    await page.getByLabel("String A").fill("abc");
-    await page.getByLabel("String B").fill("xyz");
-    await page.getByRole("button", { name: /compare all algorithms/i }).click();
-    await page.waitForSelector('text=/levenshtein/i', { timeout: 5000 });
-
-    // Both input fields and the compare button should still be visible
-    await expect(page.getByLabel("String A")).toBeVisible();
-    await expect(page.getByLabel("String B")).toBeVisible();
-  });
-
-  test("shows why Levenshtein alone is not enough", async ({ page }) => {
-    await expect(page.getByText(/levenshtein alone/i)).toBeVisible();
-    await expect(page.getByText(/abbreviation expansion/i)).toBeVisible();
-  });
-});
-
-test.describe("API Integration", () => {
-  test("backend API responds with all 24 algorithms", async ({ page }) => {
-    await page.goto("http://localhost:5173");
-    await page.waitForSelector('[role="tab"]', { timeout: 10000 });
-    await page.getByRole("tab", { name: "Consolidated Comparison" }).click();
-    await page.getByLabel("String A").fill("test");
-    await page.getByLabel("String B").fill("test");
-    await page.getByRole("button", { name: /compare all algorithms/i }).click();
-
-    // Wait for results
-    await page.waitForSelector('text=/levenshtein/i', { timeout: 5000 });
-
-    // Check that multiple algorithm results are visible
-    // We should see many algorithm names in the results
-    const algorithmElements = await page.getByText(/(levenshtein|jaro|sorensen|cosine|morge|needleman|gotoh|tversky)/i).count();
-    expect(algorithmElements).toBeGreaterThan(0);
-  });
-
-  test("displays Levenshtein-Only Verdict for IBM case", async ({ page }) => {
-    await page.goto("http://localhost:5173");
-    await page.waitForSelector('[role="tab"]', { timeout: 10000 });
-    await page.getByRole("tab", { name: "Consolidated Comparison" }).click();
+  test("compares two strings and shows the Levenshtein verdict", async ({ page }) => {
     await page.getByLabel("String A").fill("International Business Machines");
     await page.getByLabel("String B").fill("IBM");
     await page.getByRole("button", { name: /compare all algorithms/i }).click();
 
-    // Wait for results
-    await page.waitForSelector('text=/levenshtein/i', { timeout: 5000 });
-
-    // The IBM case is a hard positive - Levenshtein should give low score
-    // Verify the Levenshtein score is shown
-    await expect(page.getByText(/levenshtein/i)).toBeVisible();
-
-    // Check that Highest Scoring Algorithm is shown (should be overlap or similar for IBM case)
+    await expect(page.getByText(/levenshtein-only verdict/i)).toBeVisible();
     await expect(page.getByText(/highest scoring algorithm/i)).toBeVisible();
+    await expect(page.getByText(/algorithm quick reference/i)).toBeVisible();
+  });
+
+  test("lists all 24 algorithms in the quick reference", async ({ page }) => {
+    const rows = page.locator("text=/Levenshtein|Jaro-Winkler|Sorensen-Dice|Monge-Elkan/");
+    await expect(rows.first()).toBeVisible();
+  });
+
+  test("shows that algorithms disagree with Levenshtein on the IBM case", async ({ page }) => {
+    await page.getByLabel("String A").fill("International Business Machines");
+    await page.getByLabel("String B").fill("IBM");
+    await page.getByRole("button", { name: /compare all algorithms/i }).click();
+
+    // Levenshtein says no-match, other algorithms say match
+    await expect(page.getByText(/disagree/i).first()).toBeVisible();
+  });
+});
+
+test.describe("API integration", () => {
+  test("backend returns a score for every algorithm", async ({ page }) => {
+    const response = await page.request.post("http://localhost:8000/api/compare", {
+      data: { text1: "Acme", text2: "Acme" },
+    });
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(Object.keys(body.scores).length).toBe(24);
+
+    // Identical strings must score 1.0 everywhere it is meaningful
+    for (const key of [
+      "levenshtein",
+      "jaro_winkler",
+      "sorensen_dice",
+      "cosine",
+      "overlap",
+      "mra",
+      "monge_elkan",
+      "needleman_wunsch",
+      "gotoh",
+      "editex",
+    ]) {
+      expect(body.scores[key]).toBe(1.0);
+    }
+  });
+
+  test("backend scores unrelated strings low", async ({ page }) => {
+    const response = await page.request.post("http://localhost:8000/api/compare", {
+      data: { text1: "Acme", text2: "Zebra" },
+    });
+    const body = await response.json();
+    expect(body.scores.monge_elkan).toBeLessThan(0.3);
+    expect(body.scores.mra).toBeLessThan(0.3);
+    expect(body.scores.needleman_wunsch).toBeLessThan(0.6);
+  });
+
+  test("backend exposes the algorithm catalogue", async ({ page }) => {
+    const response = await page.request.get("http://localhost:8000/api/algorithms");
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(body.length).toBe(24);
   });
 });

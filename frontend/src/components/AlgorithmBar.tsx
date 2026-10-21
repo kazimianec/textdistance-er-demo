@@ -7,48 +7,48 @@ interface AlgorithmBarProps {
   highlightAlgorithms?: string[]
 }
 
+type Verdict = 'correct' | 'wrong' | 'uncertain'
+
+/** Thresholds used to turn a raw score into a match / no-match decision. */
+const MATCH_THRESHOLD = 0.7
+const NO_MATCH_THRESHOLD = 0.3
+
 export default function AlgorithmBar({ scores, shouldMatch, highlightAlgorithms = [] }: AlgorithmBarProps) {
   const sortedScores = Object.entries(scores)
     .filter(([key]) => key !== 'identity')
     .sort(([, a], [, b]) => b - a)
 
-  const getColor = (score: number, name: string) => {
-    const isHighlighted = highlightAlgorithms.includes(name)
-    const isHigh = score >= 0.8
-    const isMedium = score >= 0.5
-
-    if (isHighlighted && shouldMatch) {
-      return 'success.main'
-    }
-    if (shouldMatch) {
-      if (isHigh) return 'success.main'
-      if (isMedium) return 'warning.main'
-      return 'error.main'
-    } else {
-      if (score < 0.3) return 'success.main'
-      if (score < 0.6) return 'warning.main'
-      return 'error.main'
-    }
-  }
-
-  const getPrediction = (score: number): 'match' | 'no-match' | 'uncertain' => {
-    if (score >= 0.7) return 'match'
-    if (score <= 0.3) return 'no-match'
+  /** What the algorithm's score implies about a match, independent of ground truth. */
+  const getVerdict = (score: number): Verdict => {
+    if (score >= MATCH_THRESHOLD) return 'correct'
+    if (score <= NO_MATCH_THRESHOLD) return 'wrong'
     return 'uncertain'
   }
 
+  /**
+   * Colour by whether the algorithm's implied verdict agrees with the ground truth.
+   * A highlighted algorithm is NOT forced green: on a hard negative the highlighted
+   * algorithms are precisely the ones that fail, and hiding that would be a lie.
+   */
+  const getColor = (verdict: Verdict): string => {
+    if (verdict === 'correct') return 'success.main'
+    if (verdict === 'uncertain') return 'warning.main'
+    return 'error.main'
+  }
+
   const isCorrect = (score: number): boolean => {
-    const prediction = getPrediction(score)
-    if (shouldMatch) return prediction === 'match'
-    return prediction === 'no-match'
+    const verdict = getVerdict(score)
+    if (shouldMatch) return verdict === 'correct'
+    return verdict === 'wrong'
   }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
       {sortedScores.map(([name, score]) => {
         const info = algorithmDescriptions[name]
+        const verdict = getVerdict(score)
+        const color = getColor(verdict)
         const correct = isCorrect(score)
-        const color = getColor(score, name)
         const isHighlight = highlightAlgorithms.includes(name)
 
         return (
@@ -103,9 +103,21 @@ export default function AlgorithmBar({ scores, shouldMatch, highlightAlgorithms 
               <Chip label="KEY" size="small" color="primary" sx={{ height: 16, fontSize: '0.6rem' }} />
             )}
             {correct ? (
-              <Chip label="✓" size="small" color="success" sx={{ height: 20, minWidth: 24 }} />
+              <Chip
+                label="✓"
+                size="small"
+                color="success"
+                sx={{ height: 20, minWidth: 24 }}
+                title={shouldMatch ? 'Correctly identifies a match' : 'Correctly rules out a match'}
+              />
             ) : (
-              <Chip label="✗" size="small" color="error" sx={{ height: 20, minWidth: 24 }} />
+              <Chip
+                label="✗"
+                size="small"
+                color="error"
+                sx={{ height: 20, minWidth: 24 }}
+                title={shouldMatch ? 'Misses a real match' : 'Falsely predicts a match'}
+              />
             )}
           </Box>
         )

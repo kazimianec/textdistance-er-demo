@@ -16,9 +16,9 @@ export interface CompareResponse {
 const api = axios.create({ baseURL: "" }); // Uses Vite proxy
 
 export const compare = (text1: string, text2: string) =>
-  api.post<CompareResponse>("/compare", { text1, text2 });
+  api.post<CompareResponse>("/api/compare", { text1, text2 });
 
 export const listAlgorithms = () =>
-  api.get<AlgorithmInfo[]>("/algorithms");
+  api.get<AlgorithmInfo[]>("/api/algorithms");
 
 export default api;

@@ -204,6 +204,25 @@ def _normalize_distance(score: float, max_score: float) -> float:
     return round(max(0, 1 - score / max_score), 4)
 
 
+def _norm_sim(algorithm: object, t1: str, t2: str) -> float:
+    """Normalize a textdistance algorithm to 0-1 similarity using the library's own API.
+
+    textdistance exposes `normalized_similarity` on every algorithm, which knows the
+    correct maximum for that metric. Hand-rolled formulas get the scale wrong for
+    alignment and phonetic metrics (e.g. Monge-Elkan returns a similarity, not a
+    distance, so inverting it produces values near 1.0 for unrelated strings).
+
+    The result is clamped to [0, 1]: Gotoh's theoretical minimum does not account
+    for the gap penalties incurred by very different-length strings, so its
+    normalized_similarity can go negative.
+    """
+    try:
+        value = float(algorithm.normalized_similarity(t1, t2))
+    except Exception:
+        return 0.0
+    return round(max(0.0, min(1.0, value)), 4)
+
+
 def _normalize_length(score: float, max_len: float) -> float:
     """Normalize a length-based score to 0-1 similarity range."""
     if max_len == 0:
@@ -246,7 +265,7 @@ def compute_similarities(text1: str, text2: str) -> dict[str, float]:
     results["jaro"] = round(td.jaro(t1, t2), 4)
 
     # Ratcliff-Obershelp (similarity)
-    results["ratcliff_obershelp"] = round(td.ratcliff_obershelp(t1, t2), 4)
+    results["ratcliff_obershelp"] = _norm_sim(td.ratcliff_obershelp, t1, t2)
 
     # Overlap coefficient
     results["overlap"] = round(td.overlap(t1, t2), 4)
@@ -262,35 +281,28 @@ def compute_similarities(text1: str, text2: str) -> dict[str, float]:
     results["damerau_levenshtein"] = _normalize_distance(dam_lev, max_len)
 
     # Editex (normalized - lower is more similar)
-    editex_dist = td.editex(t1, t2)
-    results["editex"] = _normalize_distance(editex_dist, max_len)
+    results["editex"] = _norm_sim(td.editex, t1, t2)
 
     # Strcmp95 (similarity)
     results["strcmp95"] = round(td.strcmp95(t1, t2), 4)
 
-    # Hamming (only if same length, otherwise 0)
+    # Hamming (only meaningful for equal-length strings)
     if len(t1) == len(t2):
-        results["hamming"] = _normalize_distance(td.hamming(t1, t2), len(t1))
+        results["hamming"] = _norm_sim(td.hamming, t1, t2)
     else:
         results["hamming"] = 0.0
 
-    # MRA (similarity - rating 0-6+, normalize by dividing by max possible)
-    # Max possible rating is roughly min(len(t1), len(t2)) * 2
-    mra_raw = td.mra(t1, t2)
-    mra_max = min(len(t1), len(t2)) * 2
-    results["mra"] = round(mra_raw / max(mra_max, 1), 4)
+    # MRA (Match Rating Algorithm - rating normalized against the metric's own maximum)
+    results["mra"] = _norm_sim(td.mra, t1, t2)
 
-    # Monge-Elkan (similarity - already 0-1, normalize by length)
-    monge_elkan_raw = td.monge_elkan(t1, t2)
-    results["monge_elkan"] = _normalize_distance(monge_elkan_raw, max_len)
+    # Monge-Elkan (returns a similarity for non-identical inputs - do NOT invert)
+    results["monge_elkan"] = _norm_sim(td.monge_elkan, t1, t2)
 
-    # Needleman-Wunsch (normalized - negative distance, normalize by max_len)
-    nw_raw = td.needleman_wunsch(t1, t2)
-    results["needleman_wunsch"] = _normalize_distance(abs(nw_raw), max_len)
+    # Needleman-Wunsch (global alignment, negative distances - use library normalization)
+    results["needleman_wunsch"] = _norm_sim(td.needleman_wunsch, t1, t2)
 
-    # Gotoh (normalized - negative distance, normalize by max_len)
-    gotoh_raw = td.gotoh(t1, t2)
-    results["gotoh"] = _normalize_distance(abs(gotoh_raw), max_len)
+    # Gotoh (affine-gap alignment - use library normalization)
+    results["gotoh"] = _norm_sim(td.gotoh, t1, t2)
 
     # Tversky (similarity - already 0-1)
     results["tversky"] = round(td.tversky(t1, t2), 4)
@@ -314,6 +326,7 @@ def compute_similarities(text1: str, text2: str) -> dict[str, float]:
     # Entropy NCD (already 0-1, but invert for similarity)
     entropy_raw = td.entropy_ncd(t1, t2)
     results["entropy_ncd"] = _normalize_ncd(entropy_raw)
+    results["entropy_ncd"] = round(max(0, min(1, results["entropy_ncd"])), 4)
 
     # Identity (exact match)
     results["identity"] = 1.0 if t1 == t2 else 0.0
@@ -321,14 +334,14 @@ def compute_similarities(text1: str, text2: str) -> dict[str, float]:
     return results
 
 
-@app.post("/compare", response_model=CompareResponse)
+@app.post("/api/compare", response_model=CompareResponse)
 def compare(request: CompareRequest) -> CompareResponse:
     """Compute all similarity/distance scores for two strings."""
     scores = compute_similarities(request.text1, request.text2)
     return CompareResponse(text1=request.text1, text2=request.text2, scores=scores)
 
 
-@app.get("/algorithms", response_model=list[AlgorithmInfo])
+@app.get("/api/algorithms", response_model=list[AlgorithmInfo])
 def list_algorithms() -> list[AlgorithmInfo]:
     """Return metadata about all available algorithms."""
     return [AlgorithmInfo(**alg) for alg in ALGORITHMS]

@@ -9,38 +9,15 @@ import {
   Alert,
   Chip,
   Grid,
+  Divider,
 } from "@mui/material";
-import { AlgorithmGrid } from "../components/ScoreBar";
+import AlgorithmBar from "../components/AlgorithmBar";
 import { useCompare } from "../hooks/useCompare";
+import { algorithmDescriptions } from "../data/showcases";
 
-const ALGORITHM_DESCRIPTIONS: Record<string, string> = {
-  levenshtein: "Edit distance — counts insertions, deletions, substitutions",
-  jaro_winkler: "Prefix-weighted similarity — good for short names",
-  sorensen_dice: "Bigram-based — detects shared word structure",
-  cosine: "N-gram cosine similarity — robust to reordering",
-  jaro: "Jaro similarity — ancestor of Jaro-Winkler",
-  ratcliff_obershelp: "Pattern matching with sequence alignment",
-  overlap: "Overlap coefficient — shared substring ratio",
-  jaccard: "Jaccard index — set-based similarity",
-  dice: "Dice coefficient — bigram-based",
-  damerau_levenshtein: "Edit distance allowing transpositions",
-  editex: "Phonetic-aware edit distance",
-  strcmp95: "String comparison optimized for names/addresses",
-  hamming: "Position-based distance — requires equal length",
-  mra: "Match Rating Algorithm — designed for name comparison",
-  monge_elkan: "Asymmetric similarity — great for entities",
-  needleman_wunsch: "Global sequence alignment with gap penalty",
-  gotoh: "Gotoh alignment — affine gaps, very thorough",
-  tversky: "Generalized similarity — partial/abbreviation matching",
-  longest_common_subsequence: "LCS length — word/sequence order matters",
-  lcsubstr: "Longest common substring — contiguous matches",
-  prefix: "Common prefix length — abbreviation detection",
-  suffix: "Common suffix length — word ending matching",
-  entropy_ncd: "Normalized compression distance — overall similarity",
-  identity: "Exact match — 1.0 or 0.0 only",
-};
+const ALGORITHM_COUNT = Object.keys(algorithmDescriptions).length;
 
-export function ConsolidatedComparison() {
+export default function ConsolidatedComparison() {
   const [text1, setText1] = useState("");
   const [text2, setText2] = useState("");
   const [submitted1, setSubmitted1] = useState("");
@@ -54,16 +31,16 @@ export function ConsolidatedComparison() {
   };
 
   const levenshteinScore = data?.scores?.levenshtein ?? 0;
-  const bestScore = data?.scores
-    ? Math.max(...Object.entries(data.scores)
-        .filter(([k]) => k !== "identity")
-        .map(([, v]) => v))
-    : 0;
-  const bestAlg = data?.scores
+  const ranked = data?.scores
     ? Object.entries(data.scores)
         .filter(([k]) => k !== "identity")
-        .reduce((a, b) => (b[1] > a[1] ? b : a))[0]
-    : null;
+        .sort(([, a], [, b]) => b - a)
+    : [];
+  const bestAlg = ranked[0];
+  // Algorithms that disagree with Levenshtein's verdict
+  const disagreements = data
+    ? ranked.filter(([, v]) => (v >= 0.7) !== (levenshteinScore >= 0.7))
+    : [];
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -72,8 +49,8 @@ export function ConsolidatedComparison() {
           Consolidated Comparison
         </Typography>
         <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.6)" }}>
-          Compare two strings across all 21 algorithms simultaneously. See which ones
-          succeed or fail on hard cases.
+          Compare two strings across all {ALGORITHM_COUNT} algorithms simultaneously. See which
+          ones succeed or fail, and where they disagree with Levenshtein.
         </Typography>
       </Box>
 
@@ -82,7 +59,8 @@ export function ConsolidatedComparison() {
         sx={{
           p: 3,
           mb: 4,
-          background: "linear-gradient(135deg, rgba(255,82,82,0.08) 0%, rgba(124,77,255,0.08) 100%)",
+          background:
+            "linear-gradient(135deg, rgba(255,82,82,0.08) 0%, rgba(124,77,255,0.08) 100%)",
           border: "1px solid rgba(255,82,82,0.25)",
         }}
       >
@@ -96,7 +74,7 @@ export function ConsolidatedComparison() {
           {[
             "Abbreviation expansion (IBM vs International Business Machines)",
             "Word reordering (Acme Corp vs Corp Acme)",
-            "Phonetic similarity (García vs Garcia)",
+            "Length differences (suffix truncation)",
             "Prefix/suffix matching (Corp vs Corporation)",
             "Transliteration (Москва vs Moskva)",
           ].map((item) => (
@@ -111,11 +89,15 @@ export function ConsolidatedComparison() {
             />
           ))}
         </Box>
-        <Alert severity="warning" sx={{ background: "rgba(255,215,64,0.08)", border: "1px solid rgba(255,215,64,0.3)" }}>
+        <Alert
+          severity="warning"
+          sx={{ background: "rgba(255,215,64,0.08)", border: "1px solid rgba(255,215,64,0.3)" }}
+        >
           <Typography variant="body2">
-            <strong>Best practice:</strong> Use a combination of algorithms. Look at Jaro-Winkler
-            for name matching, Sorensen-Dice for word structure, Metaphone/NYSIIS for phonetic
-            variants, and Monge-Elkan for complex entity matching.
+            <strong>Best practice:</strong> use a combination of algorithms. Jaro-Winkler for
+            name matching, Sorensen-Dice and Cosine for word structure, MRA for surname
+            variants, and Monge-Elkan for complex entity matching. No single metric covers
+            every case in entity resolution.
           </Typography>
         </Alert>
       </Paper>
@@ -165,13 +147,24 @@ export function ConsolidatedComparison() {
 
       {data && (
         <>
-          {/* Levenshtein alone warning */}
+          {/* Levenshtein alone verdict */}
           <Paper
             sx={{
               p: 2,
               mb: 3,
-              background: levenshteinScore > 0.7 ? "rgba(0,230,118,0.06)" : "rgba(255,82,82,0.06)",
-              border: `1px solid ${levenshteinScore > 0.7 ? "#00e67633" : "#ff525233"}`,
+              background:
+                levenshteinScore >= 0.7
+                  ? "rgba(0,230,118,0.06)"
+                  : levenshteinScore <= 0.3
+                    ? "rgba(255,82,82,0.06)"
+                    : "rgba(255,215,64,0.06)",
+              border: `1px solid ${
+                levenshteinScore >= 0.7
+                  ? "#00e67633"
+                  : levenshteinScore <= 0.3
+                    ? "#ff525233"
+                    : "#ffd74033"
+              }`,
             }}
           >
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -181,19 +174,48 @@ export function ConsolidatedComparison() {
               variant="h5"
               sx={{
                 fontFamily: "monospace",
-                color: levenshteinScore > 0.7 ? "#00e676" : "#ff5252",
+                color:
+                  levenshteinScore >= 0.7
+                    ? "#00e676"
+                    : levenshteinScore <= 0.3
+                      ? "#ff5252"
+                      : "#ffd740",
                 mb: 1,
               }}
             >
               {levenshteinScore.toFixed(4)}
             </Typography>
             <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.6)" }}>
-              {levenshteinScore > 0.7
+              {levenshteinScore >= 0.7
                 ? "Levenshtein says: MATCH — but this may be wrong for abbreviations, reordering, or phonetic variants."
-                : levenshteinScore < 0.3
-                ? "Levenshtein says: NO MATCH — but this may be wrong for transliterations or cultural name variations."
-                : "Levenshtein is uncertain — check other algorithms for a clearer picture."}
+                : levenshteinScore <= 0.3
+                  ? "Levenshtein says: NO MATCH — but this may be wrong for transliterations or cultural name variations."
+                  : "Levenshtein is uncertain — check other algorithms for a clearer picture."}
             </Typography>
+
+            {disagreements.length > 0 && (
+              <>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  {disagreements.length} algorithm{disagreements.length === 1 ? "" : "s"} disagree
+                  with Levenshtein:
+                </Typography>
+                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                  {disagreements.map(([name, score]) => (
+                    <Chip
+                      key={name}
+                      label={`${algorithmDescriptions[name]?.name ?? name} ${score.toFixed(2)}`}
+                      size="small"
+                      sx={{
+                        backgroundColor:
+                          score >= 0.7 ? "rgba(0,230,118,0.12)" : "rgba(255,82,82,0.12)",
+                        border: `1px solid ${score >= 0.7 ? "#00e67644" : "#ff525244"}`,
+                      }}
+                    />
+                  ))}
+                </Box>
+              </>
+            )}
           </Paper>
 
           {/* Best algorithm */}
@@ -202,41 +224,68 @@ export function ConsolidatedComparison() {
               <Typography variant="subtitle2" sx={{ mb: 1, color: "rgba(255,255,255,0.6)" }}>
                 Highest Scoring Algorithm:
               </Typography>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
                 <Typography variant="h5" sx={{ fontFamily: "monospace", color: "#7c4dff" }}>
-                  {bestAlg.replace(/_/g, " ")}
+                  {algorithmDescriptions[bestAlg[0]]?.name ?? bestAlg[0]}
                 </Typography>
                 <Chip
-                  label={`${bestScore.toFixed(4)}`}
+                  label={bestAlg[1].toFixed(4)}
                   sx={{ backgroundColor: "rgba(124,77,255,0.15)", border: "1px solid #7c4dff44" }}
                 />
                 <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.5)" }}>
-                  {ALGORITHM_DESCRIPTIONS[bestAlg] || ""}
+                  {algorithmDescriptions[bestAlg[0]]?.description ?? ""}
                 </Typography>
               </Box>
             </Box>
           )}
 
-          {/* All scores */}
-          <AlgorithmGrid scores={data.scores} expectedMatch={true} />
+          {/* All scores, ranked */}
+          <Paper
+            sx={{
+              p: 3,
+              mb: 3,
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.06)",
+            }}
+          >
+            <Typography
+              variant="subtitle2"
+              sx={{
+                mb: 2,
+                color: "rgba(255,255,255,0.5)",
+                textTransform: "uppercase",
+                letterSpacing: 1,
+              }}
+            >
+              All Algorithms — Ranked
+            </Typography>
+            <AlgorithmBar scores={data.scores} shouldMatch={true} />
+          </Paper>
 
           {/* Algorithm legend */}
-          <Paper sx={{ p: 2, mt: 3, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <Paper
+            sx={{
+              p: 2,
+              mt: 3,
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.06)",
+            }}
+          >
             <Typography variant="subtitle2" sx={{ mb: 2 }}>
               Algorithm Quick Reference
             </Typography>
             <Grid container spacing={1}>
-              {Object.entries(ALGORITHM_DESCRIPTIONS).map(([alg, desc]) => (
+              {Object.entries(algorithmDescriptions).map(([alg, info]) => (
                 <Grid size={{ xs: 12, sm: 6 }} key={alg}>
                   <Box sx={{ display: "flex", gap: 1, py: 0.5 }}>
                     <Typography
                       variant="body2"
                       sx={{ fontFamily: "monospace", color: "#7c4dff", minWidth: 140 }}
                     >
-                      {alg.replace(/_/g, " ")}
+                      {info.name}
                     </Typography>
                     <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.5)" }}>
-                      {desc}
+                      {info.description}
                     </Typography>
                   </Box>
                 </Grid>

@@ -1,6 +1,7 @@
 import { Box, Typography, Card, CardContent, Button, Grid, Alert } from '@mui/material'
 import { Link } from 'react-router-dom'
 import { CompareArrows, GridView, Info, Warning } from '@mui/icons-material'
+import { algorithmDescriptions } from '../data/showcases'
 
 export default function Home() {
   return (
@@ -52,7 +53,7 @@ export default function Home() {
                 Compare
               </Typography>
               <Typography color="text.secondary" sx={{ mb: 3 }}>
-                Enter any two strings and see all 21 algorithms scored side-by-side with visual bars
+                Enter any two strings and see all {algorithmDescriptions ? Object.keys(algorithmDescriptions).length : 24} algorithms scored side-by-side with visual bars
               </Typography>
               <Button component={Link} to="/compare" variant="contained" size="large" color="secondary">
                 Try It Now
@@ -69,7 +70,7 @@ export default function Home() {
                 Algorithms
               </Typography>
               <Typography color="text.secondary" sx={{ mb: 3 }}>
-                21 distance/similarity metrics including Levenshtein, Jaro-Winkler, phonetic encodings, and more
+                {algorithmDescriptions ? Object.keys(algorithmDescriptions).length : 24} distance/similarity metrics including Levenshtein, Jaro-Winkler, phonetic encodings, and more
               </Typography>
               <Button component={Link} to="/showcases" variant="outlined" size="large">
                 Learn More
@@ -98,13 +99,13 @@ export default function Home() {
                   "International Business Machines" ↔ "IBM"
                 </Typography>
                 <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                  Levenshtein: 0.08 | Jaro-Winkler: 0.54 | Should be: MATCH
+                  Levenshtein: 0.10 | Overlap: 1.00 | Should be: MATCH
                 </Typography>
                 <Typography variant="body2" sx={{ fontFamily: 'monospace', mt: 2 }}>
                   "Moscow" ↔ "Moskva"
                 </Typography>
                 <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                  Levenshtein: 0.33 | Metaphone: Match! | Should be: MATCH
+                  Levenshtein: 0.50 | Strcmp95: 0.84 | Should be: MATCH
                 </Typography>
               </CardContent>
             </Card>
@@ -119,13 +120,13 @@ export default function Home() {
                   "Bank of America Corporation" ↔ "America Bank Corporation"
                 </Typography>
                 <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                  Levenshtein: 0.76 | Looks similar | But should NOT match
+                  Levenshtein: 0.52 | Cosine: 0.94 | Looks similar | But should NOT match
                 </Typography>
                 <Typography variant="body2" sx={{ fontFamily: 'monospace', mt: 2 }}>
                   "Jim Wilson" ↔ "James Wilson" (different person)
                 </Typography>
                 <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                  Levenshtein: 0.71 | Same name! | But should NOT match
+                  Levenshtein: 0.75 | Jaro-Winkler: 0.83 | Same name! | But should NOT match
                 </Typography>
               </CardContent>
             </Card>

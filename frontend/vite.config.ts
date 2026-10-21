@@ -6,8 +6,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/compare': 'http://localhost:8000',
-      '/algorithms': 'http://localhost:8000',
+      // Only the API namespace is proxied. The SPA also owns a client-side
+      // route called /compare, so proxying bare paths would swallow navigation.
+      '/api': 'http://localhost:8000',
     },
   },
 })

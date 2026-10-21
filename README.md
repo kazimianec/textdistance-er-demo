@@ -2,11 +2,11 @@
 
 Entity Resolution with 24 string distance/similarity algorithms from [`textdistance`](https://github.com/orsinium/textdistance).
 
-**Key insight:** Levenshtein distance alone is **not sufficient** for entity resolution. This demo shows why — and which algorithms work better for specific hard cases.
+**Key insight:** Levenshtein distance alone is **not sufficient** for entity resolution. This demo shows why — with 93 test cases across 14 showcases — and which algorithms work better for specific hard cases.
 
 ## Live Demo
 
-**Frontend:** `http://localhost:5173`  
+**Frontend:** `http://localhost:5173`
 **Backend API:** `http://localhost:8000`
 
 ## Quick Start
@@ -23,113 +23,154 @@ npm install
 npm run dev
 ```
 
-## What's Built
+## Routes
 
-### 14 Showcase Tabs
+| Route | Purpose |
+|-------|---------|
+| `/` | Landing page: what entity resolution is, why Levenshtein alone fails |
+| `/showcases` | 14 showcase tabs, 93 expandable cases with per-algorithm verdicts |
+| `/compare` | Consolidated Comparison — paste any two strings, see all 24 algorithms ranked |
 
-| # | Showcase | Description |
-|---|----------|-------------|
-| 1 | **Company Names** | Abbreviation expansion (IBM vs International Business Machines), permutations, legal suffixes |
-| 2 | **Company + Address** | Address formatting, suite abbreviations, directional variants |
-| 3 | **Person Names** | Nickname→legal (Bill→William), cultural variations (Jon→John), middle initial drop |
-| 4 | **Name + Address** | Zip+4, apt/suite synonyms, directional omission, spelling variations |
-| 5 | **Long Common Substrings** | IBM International vs IBM Corporation — shared words don't mean same entity |
-| 6 | **Transliterations** | Москва→Moskva, 北京→Beijing, München→Munich — cross-alphabet matching |
-| 7 | **Heavy Typos** | Keyboard adjacency errors, double-character mistakes, missing spaces |
-| 8 | **Mixed Noise** | OCR + abbreviation + typos combined |
-| 9 | **Brand Variations** | Brand vs legal name, parent vs subsidiary, product line traps |
-| 10 | **Legal Entity Types** | Inc vs LLC (same entity, different structure), GmbH vs Ltd (different countries) |
-| 11 | **OCR / Scraping** | 0 vs O, 1 vs l vs I, invisible unicode spaces, line breaks |
-| 12 | **URL / Domain** | www prefix, subdomain variation, typosquatting detection |
-| 13 | **Scientific Names** | Generic vs brand drug names, gene symbol vs full name |
-| 14 | **Historical Names** | Constantinople→Istanbul, Burma→Myanmar, AT&T→Bell Labs |
+## API
 
-### 24 Algorithms
+```
+POST /api/compare        { "text1": "...", "text2": "..." }  ->  { "scores": { <24 algorithms>: 0..1 } }
+GET  /api/algorithms                                          ->  algorithm catalogue
+```
 
-| Algorithm | Type | Best For |
+The API is namespaced under `/api` because the SPA also owns a client-side route
+called `/compare`; a bare path proxy would swallow browser navigation.
+
+## The 14 Showcases (93 cases)
+
+Eight **core** showcases, plus six **discovered** ones covering less obvious
+entity-resolution traps.
+
+| # | Showcase | Category | Cases | Focus |
+|---|----------|----------|-------|-------|
+| 1 | Company Names with Abbreviations | core | 8 | Abbreviation expansion (IBM vs International Business Machines), word permutations, legal suffixes |
+| 2 | Company Name + Address | core | 6 | Full vs partial addresses, suite/building formatting, directional variants |
+| 3 | Person Full Names | core | 8 | Cultural variations (Jon/John), transliterations, middle-initial drop, nicknames |
+| 4 | Person Name + Address | core | 5 | Zip+4, Apt vs Suite, omitted street directionals, spelling variants |
+| 5 | Long Common Substrings | core | 6 | Shared words in different order — matching words ≠ matching entity |
+| 6 | Transliterations & Cross-Alphabet | core | 6 | Москва→Moskva, 北京→Beijing, München→Munich — no shared characters |
+| 7 | Heavy Typo Scenarios | core | 8 | Keyboard adjacency errors, double-character mistakes, vowel swaps, missing spaces |
+| 8 | Mixed Real-World Noise | core | 6 | OCR errors + abbreviations + transliterations combined |
+| 9 | Brand & Product Name Variations | discovered | 6 | Brand vs legal name, parent company vs subsidiary, product line traps |
+| 10 | Legal Entity Type Variations | discovered | 6 | Inc vs LLC vs GmbH vs Ltd — same org, different legal form or country |
+| 11 | Address Format Differences | discovered | 6 | US vs EU postal conventions, "St" vs "Street", suite notation |
+| 12 | Nickname vs Legal Name | discovered | 8 | Bill→William, Bob→Robert, Liz→Elizabeth, Maggie→Margaret |
+| 13 | Historical & Outdated Names | discovered | 6 | Constantinople→Istanbul, Burma→Myanmar, AT&T→Bell Labs |
+| 14 | Partial & Substring Matches | discovered | 8 | One string a substring of another, where a match may or may not be correct |
+
+Every case is labelled with its ground truth, and per-algorithm verdicts are
+shown as ✓ (correctly called match / no-match) or ✗ (missed it / false positive).
+
+## The 24 Algorithms
+
+| Algorithm | Type | Best for |
 |-----------|------|----------|
-| Levenshtein | distance | Typo detection (but not enough alone) |
+| Levenshtein | distance | Typo detection — but not enough alone |
+| Damerau-Levenshtein | distance | Typos involving transpositions |
 | Jaro-Winkler | similarity | Name matching with prefix credit |
-| Sorensen-Dice | similarity | Shared bigrams, word reordering |
-| Cosine | similarity | N-gram patterns, abbreviation expansion |
 | Jaro | similarity | Short string matching |
-| Ratcliff-Obershelp | similarity | Pattern matching, word reordering |
+| Sorensen-Dice | similarity | Shared bigrams, word reordering |
+| Dice | similarity | Bigram matching |
+| Cosine | similarity | N-gram patterns, abbreviation expansion |
 | Overlap | similarity | Shared substring ratio |
 | Jaccard | similarity | Set-based similarity |
-| Dice | similarity | Bigram matching |
-| Damerau-Levenshtein | distance | Typos with transpositions |
-| Editex | distance | Phonetic-aware matching |
-| StrCmp95 | similarity | Name/address comparison |
-| Hamming | distance | Fixed-length codes |
-| MRA | similarity | Name comparison, cultural variants |
+| Ratcliff-Obershelp | similarity | Pattern matching, word reordering |
+| Strcmp95 | similarity | Names/addresses, numeric-insensitive |
+| Editex | similarity | Phonetic-aware edit distance |
+| Hamming | distance | Equal-length strings only |
+| MRA | similarity | Name comparison, surname variants |
 | Monge-Elkan | similarity | Complex entity matching |
 | Needleman-Wunsch | similarity | Global sequence alignment |
-| Gotoh | similarity | Affine gap alignment |
-| Tversky | similarity | Partial matching, abbreviations |
-| Longest Common Subsequence | similarity | Word order matters |
+| Gotoh | similarity | Affine-gap alignment |
+| Tversky | similarity | Partial / abbreviation matching |
+| Longest Common Subsequence | similarity | Word or sequence order matters |
 | LCSubstring | similarity | Contiguous shared substrings |
 | Prefix | similarity | Abbreviation detection |
 | Suffix | similarity | Word ending matching |
-| Entropy NCD | similarity | Overall similarity via compression |
+| Entropy NCD | similarity | Overall similarity, pattern complexity |
 | Identity | similarity | Exact match (1.0 or 0.0) |
 
-### Hard Positives vs Hard Negatives
+### Normalization matters
 
-- **Hard Positive:** Strings look very similar but should **NOT** match (e.g., "Amazon Web Services" vs "Amazon Internet Services")
-- **Hard Negative:** Strings look very different but **SHOULD** match (e.g., "Москва" vs "Moskva")
+Every metric is normalized through textdistance's own `normalized_similarity`
+API rather than a hand-rolled formula. This is not a detail — a hand-rolled
+`1 - distance/max_len` is wrong for several metrics:
 
-Each showcase example is labeled with its type.
+| Metric | Hand-rolled result | Correct |
+|--------|-------------------|---------|
+| Monge-Elkan | 0.99 for *unrelated* strings (it returns a similarity, not a distance — inverting it was wrong) | 0.03 |
+| Needleman-Wunsch | 0.00 for *identical* strings | 1.00 |
+| Gotoh | 0.00 for *identical* strings | 1.00 |
+| MRA | 0.375 for *identical* strings | 1.00 |
 
-## Hard Positive Example: IBM
+`backend/tests/test_algorithm_normalization.py` guards all of these.
+
+## Why Levenshtein Alone Fails
 
 ```
-String A: International Business Machines
-String B: IBM
-Expected:  MATCH (same entity)
+"International Business Machines"  vs  "IBM"      → should MATCH
+  Levenshtein  0.10   ✗ misses it
+  Overlap      1.00   ✓
+  Jaro-Winkler 0.58   ~
 
-Levenshtein: 0.0968  ← VERY LOW (fails!)
-Jaro-Winkler: 0.5771 ← Moderate
-MRA:          1.0000 ← Correct!
-Overlap:      1.0000 ← Correct!
+"Amazon Web Services"  vs  "Amazon Internet Services"   → should NOT match
+  Levenshtein  0.71   ✗ false positive
+  Sorensen-Dice 0.79  ✗ false positive
+  Cosine       0.80   ✗ false positive
 ```
 
-Levenshtein says "no match" because it sees 28 characters vs 3 characters. But MRA (Match Rating Algorithm) correctly identifies them as the same entity.
+Levenshtein measures edit distance. Abbreviation expansion, word reordering,
+transliteration, and length truncation all defeat it. Real entity resolution
+combines several metrics and applies thresholds per field.
 
-## Playwright Tests
+## Testing
 
 ```bash
-cd frontend
-npx playwright test
+# Backend — 137 tests
+cd backend && python3 -m pytest tests/ -q
+
+# Frontend — 17 Playwright tests, headless
+cd frontend && npx playwright test
 ```
 
-**Note:** Requires system browser dependencies (`npx playwright install-deps chromium`). Tests verify:
-- All 14 showcase tabs render and navigate correctly
-- API integration returns all 21 algorithm scores
-- Consolidated comparison page works end-to-end
-- Hard positive/negative cases are properly flagged
+Playwright needs system browser libraries. If Chromium will not start:
+
+```bash
+sudo npx playwright install-deps chromium
+```
 
 ## Project Structure
 
 ```
 textdistance-er-demo/
 ├── backend/
-│   ├── src/app/main.py     # FastAPI + 24 algorithm computations
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   │   ├── App.tsx                    # Main app with tab navigation
-│   │   ├── api/client.ts              # API client
-│   │   ├── components/
-│   │   │   ├── ScoreBar.tsx           # Visual score bars with highlighting
-│   │   │   └── ComparisonCard.tsx     # Side-by-side comparison card
-│   │   ├── hooks/useCompare.ts        # React Query hook for API
-│   │   ├── pages/
-│   │   │   ├── Showcases.tsx          # 14-tab showcase page
-│   │   │   └── ConsolidatedComparison.tsx  # Full algorithm comparison
-│   │   └── theme/theme.ts             # Dark MUI theme
-│   ├── e2e/showcases.spec.ts          # Playwright tests
-│   └── playwright.config.ts
-└── README.md
+│   ├── src/app/main.py                    # FastAPI + 24 algorithms
+│   └── tests/
+│       ├── test_compute_similarities.py   # 25 tests
+│       └── test_algorithm_normalization.py# 112 tests (regression guard)
+└── frontend/
+    ├── src/
+    │   ├── App.tsx                        # react-router routes
+    │   ├── api/client.ts                  # API client
+    │   ├── components/
+    │   │   ├── Layout.tsx                 # app shell + nav
+    │   │   ├── CaseCard.tsx               # expandable case card
+    │   │   └── AlgorithmBar.tsx           # per-algorithm bars + ✓/✗ verdicts
+    │   ├── data/showcases.ts              # 14 showcases, 93 cases
+    │   ├── pages/
+    │   │   ├── Home.tsx                   # landing page
+    │   │   ├── Showcases.tsx              # tabbed showcase browser
+    │   │   └── ConsolidatedComparison.tsx # free-form comparison
+    │   ├── hooks/useCompare.ts
+    │   ├── theme/theme.ts
+    │   └── types.ts
+    ├── e2e/showcases.spec.ts              # Playwright tests
+    └── playwright.config.ts
 ```
 
 ## GitHub

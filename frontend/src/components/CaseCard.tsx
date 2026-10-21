@@ -90,14 +90,16 @@ export default function CaseCard({ testCase }: CaseCardProps) {
             <>
               {testCase.highlightHardPositive && (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  <strong>Hard Positive:</strong> These strings look very different but SHOULD match.
-                  Algorithms marked as KEY are specifically highlighted for this case.
+                  <strong>Hard positive:</strong> these strings look very different but
+                  SHOULD match. Algorithms marked KEY are the ones that cope with this
+                  case &mdash; Levenshtein usually does not.
                 </Alert>
               )}
               {testCase.highlightHardNegative && (
                 <Alert severity="warning" sx={{ mb: 2 }}>
-                  <strong>Hard Negative:</strong> These strings look somewhat similar but should NOT match.
-                  Algorithms may incorrectly score these as a match.
+                  <strong>Hard negative:</strong> these strings look similar but should
+                  NOT match. Algorithms marked KEY are the ones that wrongly score them
+                  as a match.
                 </Alert>
               )}
               <AlgorithmBar
