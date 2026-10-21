@@ -132,9 +132,9 @@ combines several metrics and applies thresholds per field.
 
 ```bash
 # Backend — 137 tests
-cd backend && python3 -m pytest tests/ -q
+cd backend && poetry run pytest tests/ -q
 
-# Frontend — 17 Playwright tests, headless
+# Frontend — 16 Playwright tests, headless
 cd frontend && npx playwright test
 ```
 
