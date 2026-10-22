@@ -215,9 +215,18 @@ def _norm_sim(algorithm: object, t1: str, t2: str) -> float:
     The result is clamped to [0, 1]: Gotoh's theoretical minimum does not account
     for the gap penalties incurred by very different-length strings, so its
     normalized_similarity can go negative.
+
+    Only genuine computation failures are swallowed. In particular, an
+    ImportError means an optional dependency is missing (textdistance needs
+    numpy for Needleman-Wunsch and Gotoh), and reporting that as a similarity
+    of 0.0 silently claims two identical strings are completely different.
     """
     try:
         value = float(algorithm.normalized_similarity(t1, t2))
+    except ImportError:
+        # Re-raise: a missing optional dependency is an environment problem,
+        # not a similarity of zero.
+        raise
     except Exception:
         return 0.0
     return round(max(0.0, min(1.0, value)), 4)

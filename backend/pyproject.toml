@@ -10,7 +10,21 @@ dependencies = [
     "fastapi (>=0.115.0)",
     "uvicorn (>=0.30.0)",
     "textdistance (>=4.6.0)",
-    "pydantic (>=2.0.0)"
+    "pydantic (>=2.0.0)",
+    # textdistance implements Needleman-Wunsch and Gotoh only when numpy is
+    # importable, and raises ImportError otherwise. Without this the two
+    # alignment metrics silently reported 0% similarity.
+    "numpy (>=1.26.0)",
+]
+
+
+[dependency-groups]
+# pytest was never declared as a dependency, so it only worked locally
+# because a global pyenv install happened to shadow it. A clean `poetry
+# install` produced an environment with no pytest at all.
+dev = [
+    "pytest (>=8.0.0)",
+    "httpx (>=0.28.0)",
 ]
 
 
