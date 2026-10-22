@@ -76,8 +76,8 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Start backend
+        working-directory: backend
         run: |
-          cd backend
           pip install poetry
           poetry install
           nohup poetry run uvicorn src.app.main:app --port 8000 > /tmp/backend.log 2>&1 &

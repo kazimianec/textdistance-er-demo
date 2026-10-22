@@ -14,6 +14,13 @@ dependencies = [
 ]
 
 
+[tool.poetry]
+# The backend lives in src/app, but the distribution name is
+# "textdistance-er-demo-backend", so Poetry cannot infer the package folder
+# from the project name. Without this, `poetry install` fails with
+# "No file/folder found for package textdistance-er-demo-backend".
+packages = [{ include = "app", from = "src" }]
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
