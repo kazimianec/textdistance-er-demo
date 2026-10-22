@@ -134,7 +134,7 @@ combines several metrics and applies thresholds per field.
 # Backend — 137 tests
 cd backend && poetry run pytest tests/ -q
 
-# Frontend — 16 Playwright tests, headless
+# Frontend — 19 Playwright tests, headless
 cd frontend && npx playwright test
 ```
 
@@ -142,6 +142,20 @@ Playwright needs system browser libraries. If Chromium will not start:
 
 ```bash
 sudo npx playwright install-deps chromium
+```
+
+The Playwright suite also guards the curated showcase data: it asserts that
+every algorithm marked KEY in `showcases.ts` is a real API algorithm *and*
+actually scores at or above the 0.7 match threshold the UI uses to colour
+verdicts. The curated lists were originally written against an earlier,
+incorrect backend normalization and silently went stale, so that check now
+keeps them honest.
+
+If you change the backend normalization, regenerate the curated KEY lists
+afterwards (with the backend running):
+
+```bash
+cd frontend && node --experimental-strip-types scripts/regenerate-highlights.mjs
 ```
 
 ## Project Structure
@@ -170,6 +184,7 @@ textdistance-er-demo/
     │   ├── theme/theme.ts
     │   └── types.ts
     ├── e2e/showcases.spec.ts              # Playwright tests
+    ├── scripts/regenerate-highlights.mjs  # rebuild curated KEY lists from the API
     └── playwright.config.ts
 ```
 

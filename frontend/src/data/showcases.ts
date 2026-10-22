@@ -16,7 +16,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Abbreviation expansion - Levenshtein sees 18 vs 3 chars',
-        highlightHardPositive: ['levenshtein', 'jaro'],
+        highlightHardPositive: ['overlap'],
       },
       {
         id: 'co-2',
@@ -41,7 +41,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Another classic abbreviation - Levenshtein fails',
-        highlightHardPositive: ['levenshtein', 'jaro', 'jaro_winkler'],
+        highlightHardPositive: ['overlap'],
       },
       {
         id: 'co-5',
@@ -99,7 +99,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Apostrophe, extra suffix, spelled-out state',
-        highlightHardPositive: ['levenshtein', 'cosine', 'sorensen_dice'],
+        highlightHardPositive: ['mra', 'overlap', 'entropy_ncd', 'strcmp95', 'jaro_winkler', 'gotoh'],
       },
       {
         id: 'ca-3',
@@ -124,7 +124,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Complex abbreviation + different word choice',
-        highlightHardPositive: ['levenshtein'],
+        highlightHardPositive: ['entropy_ncd', 'overlap', 'strcmp95', 'jaro_winkler', 'gotoh', 'jaro'],
       },
       {
         id: 'ca-6',
@@ -182,7 +182,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Spanish/English variant - Levenshtein misses this',
-        highlightHardPositive: ['levenshtein', 'jaro'],
+        highlightHardPositive: ['overlap', 'mra', 'entropy_ncd', 'jaro_winkler', 'strcmp95', 'jaro'],
       },
       {
         id: 'pn-6',
@@ -191,7 +191,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Catherine/Katherine + apostrophe variation',
-        highlightHardPositive: ['levenshtein', 'jaro'],
+        highlightHardPositive: ['entropy_ncd', 'strcmp95', 'editex', 'needleman_wunsch', 'gotoh', 'jaro_winkler'],
       },
       {
         id: 'pn-7',
@@ -233,7 +233,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Middle initial + full street name',
-        highlightHardPositive: ['levenshtein'],
+        highlightHardPositive: ['overlap', 'entropy_ncd', 'gotoh', 'strcmp95', 'jaro_winkler', 'cosine'],
       },
       {
         id: 'pa-3',
@@ -242,7 +242,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Initial + city abbreviation - hard for all algorithms',
-        highlightHardPositive: ['jaro_winkler'],
+        highlightHardPositive: ['entropy_ncd', 'overlap', 'gotoh', 'jaro_winkler', 'cosine', 'jaro'],
       },
       {
         id: 'pa-4',
@@ -259,7 +259,7 @@ export const showcases: Showcase[] = [
         shouldMatch: false,
         difficulty: 'hard',
         notes: 'HARD NEGATIVE: Jim/James + Maine/Main typo',
-        highlightHardNegative: ['levenshtein'],
+        highlightHardNegative: ['entropy_ncd', 'overlap', 'cosine', 'gotoh', 'sorensen_dice', 'dice'],
       },
     ],
   },
@@ -277,7 +277,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Shared words scrambled + abbreviation',
-        highlightHardPositive: ['sorensen_dice', 'cosine', 'overlap'],
+        highlightHardPositive: ['overlap', 'entropy_ncd'],
       },
       {
         id: 'lcs-2',
@@ -286,7 +286,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Word order permutation',
-        highlightHardPositive: ['sorensen_dice', 'cosine', 'monge_elkan'],
+        highlightHardPositive: ['overlap', 'entropy_ncd', 'cosine', 'sorensen_dice', 'dice', 'jaccard'],
       },
       {
         id: 'lcs-3',
@@ -319,7 +319,7 @@ export const showcases: Showcase[] = [
         shouldMatch: false,
         difficulty: 'hard',
         notes: 'HARD NEGATIVE: Similar words,grammatically wrong but close to true',
-        highlightHardNegative: ['levenshtein', 'jaro_winkler'],
+        highlightHardNegative: ['entropy_ncd', 'overlap', 'cosine', 'sorensen_dice', 'dice', 'jaccard'],
       },
     ],
   },
@@ -361,7 +361,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Arabic transliteration variants',
-        highlightHardPositive: ['jaro_winkler'],
+        highlightHardPositive: ['entropy_ncd', 'strcmp95', 'jaro_winkler', 'gotoh', 'jaro', 'editex'],
       },
       {
         id: 'tr-5',
@@ -378,7 +378,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'German umlaut transliteration',
-        highlightHardPositive: ['jaro_winkler'],
+        highlightHardPositive: ['entropy_ncd', 'overlap', 'gotoh', 'jaro_winkler', 'strcmp95', 'editex'],
       },
     ],
   },
@@ -412,7 +412,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Double consonant typo - often made',
-        highlightHardPositive: ['levenshtein', 'jaro_winkler'],
+        highlightHardPositive: ['overlap', 'editex', 'mra', 'entropy_ncd', 'cosine', 'sorensen_dice'],
       },
       {
         id: 'ht-4',
@@ -486,7 +486,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Multiple abbreviations + full expansion',
-        highlightHardPositive: ['levenshtein'],
+        highlightHardPositive: ['mra', 'overlap', 'entropy_ncd'],
       },
       {
         id: 'mn-4',
@@ -503,7 +503,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Umlaut + company type variants',
-        highlightHardPositive: ['jaro_winkler'],
+        highlightHardPositive: ['entropy_ncd', 'overlap', 'jaro_winkler', 'strcmp95', 'jaro', 'gotoh'],
       },
       {
         id: 'mn-6',
@@ -571,7 +571,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Classic acronym expansion',
-        highlightHardPositive: ['levenshtein'],
+        highlightHardPositive: ['overlap', 'entropy_ncd'],
       },
     ],
   },
@@ -662,7 +662,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Word order + ordinal',
-        highlightHardPositive: ['overlap', 'lcsstr'],
+        highlightHardPositive: ['entropy_ncd', 'jaro_winkler', 'sorensen_dice', 'cosine', 'overlap', 'dice'],
       },
       {
         id: 'af-4',
@@ -671,7 +671,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Boulevard vs Blvd, Apartment vs Unit',
-        highlightHardPositive: ['cosine', 'sorensen_dice'],
+        highlightHardPositive: ['mra', 'entropy_ncd', 'jaro_winkler', 'sorensen_dice', 'cosine', 'overlap'],
       },
       {
         id: 'af-5',
@@ -688,7 +688,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Ordinal forms reversed',
-        highlightHardPositive: ['levenshtein', 'jaro_winkler'],
+        highlightHardPositive: ['overlap', 'entropy_ncd', 'cosine', 'jaro_winkler', 'sorensen_dice', 'dice'],
       },
     ],
   },
@@ -714,7 +714,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Betty from Elizabeth - common but hard',
-        highlightHardPositive: ['jaro_winkler'],
+        highlightHardPositive: ['entropy_ncd', 'strcmp95', 'overlap', 'jaro_winkler', 'jaro'],
       },
       {
         id: 'nl-3',
@@ -747,7 +747,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Larry from Lawrence + apostrophe typo',
-        highlightHardPositive: ['jaro_winkler'],
+        highlightHardPositive: ['overlap', 'entropy_ncd'],
       },
       {
         id: 'nl-7',
@@ -781,7 +781,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'City renamed - no similarity whatsoever',
-        highlightHardPositive: ['compression'],
+        highlightHardPositive: ['entropy_ncd'],
       },
       {
         id: 'hn-2',
@@ -790,7 +790,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Old romanization vs pinyin',
-        highlightHardPositive: ['compression'],
+        highlightHardPositive: ['entropy_ncd', 'gotoh', 'jaro_winkler', 'jaro', 'strcmp95', 'editex'],
       },
       {
         id: 'hn-3',
@@ -799,7 +799,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Former capital name change',
-        highlightHardPositive: ['compression'],
+        highlightHardPositive: ['entropy_ncd', 'editex', 'jaro_winkler', 'jaro', 'strcmp95', 'overlap'],
       },
       {
         id: 'hn-4',
@@ -808,7 +808,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Colonial vs local name',
-        highlightHardPositive: ['compression'],
+        highlightHardPositive: ['entropy_ncd', 'needleman_wunsch', 'gotoh', 'strcmp95'],
       },
       {
         id: 'hn-5',
@@ -858,7 +858,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Classic acronym - Levenshtein fails',
-        highlightHardPositive: ['levenshtein', 'jaro_winkler'],
+        highlightHardPositive: ['overlap'],
       },
       {
         id: 'pm-4',
@@ -875,7 +875,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'Airport code vs full name',
-        highlightHardPositive: ['levenshtein'],
+        highlightHardPositive: [],
       },
       {
         id: 'pm-6',
@@ -884,7 +884,7 @@ export const showcases: Showcase[] = [
         shouldMatch: true,
         difficulty: 'hard',
         notes: 'US agency acronym',
-        highlightHardPositive: ['levenshtein'],
+        highlightHardPositive: ['overlap'],
       },
       {
         id: 'pm-7',
